@@ -675,18 +675,20 @@ export class DataService {
       // Validate project data
       this.validateProjectData(updatedProject);
       
-      // Get all projects to find the row number
+      // Get all projects to find the row number and current data
       const response = await this.sheetsService.getSheetData('Projects!A:M');
       
       if (!response.values || response.values.length === 0) {
         throw new Error('No projects found in sheet');
       }
 
-      // Find the project's row
+      // Find the project's row and get current data
       let projectRowIndex = -1;
+      let currentProjectData: any[] = [];
       for (let i = 1; i < response.values.length; i++) {
         if (response.values[i][0] === projectId) {
           projectRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+          currentProjectData = response.values[i];
           break;
         }
       }
@@ -695,6 +697,9 @@ export class DataService {
         throw new Error(`Project ${projectId} not found in Projects sheet`);
       }
 
+      // Preserve existing calculated fields
+      const currentTotalActualHours = parseFloat(currentProjectData[10]) || 0;
+      
       // Calculate total amount
       const totalAmount = updatedProject.totalBilledHours * updatedProject.perHourRate;
 
@@ -710,7 +715,7 @@ export class DataService {
         updatedProject.budget.toString(),
         updatedProject.perHourRate.toString(),
         updatedProject.totalEstimatedHours.toString(),
-        updatedProject.totalActualHours.toString(), // Keep existing actual hours
+        currentTotalActualHours.toString(), // Preserve existing actual hours
         updatedProject.totalBilledHours.toString(),
         totalAmount.toString(),
       ]];
@@ -730,7 +735,7 @@ export class DataService {
       const updatedProjectData: Project = {
         ...updatedProject,
         id: projectId,
-        totalActualHours: updatedProject.totalActualHours,
+        totalActualHours: currentTotalActualHours,
         totalAmount: totalAmount
       };
 
@@ -749,18 +754,20 @@ export class DataService {
       // Validate task data
       this.validateTaskData(updatedTask);
       
-      // Get all tasks to find the row number
+      // Get all tasks to find the row number and current data
       const response = await this.sheetsService.getSheetData('Tasks!A:R');
       
       if (!response.values || response.values.length === 0) {
         throw new Error('No tasks found in sheet');
       }
 
-      // Find the task's row
+      // Find the task's row and get current data
       let taskRowIndex = -1;
+      let currentTaskData: any[] = [];
       for (let i = 1; i < response.values.length; i++) {
         if (response.values[i][0] === taskId) {
           taskRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+          currentTaskData = response.values[i];
           break;
         }
       }
@@ -769,6 +776,9 @@ export class DataService {
         throw new Error(`Task ${taskId} not found in Tasks sheet`);
       }
 
+      // Preserve existing calculated fields
+      const currentActualHours = parseFloat(currentTaskData[8]) || 0;
+      
       // Calculate amount
       const calculatedAmount = updatedTask.billedHours * updatedTask.taskPerHourRate;
 
@@ -782,7 +792,7 @@ export class DataService {
         updatedTask.priority,
         updatedTask.status,
         updatedTask.estimatedHours.toString(),
-        updatedTask.actualHours.toString(), // Keep existing actual hours
+        currentActualHours.toString(), // Preserve existing actual hours
         updatedTask.billedHours.toString(),
         updatedTask.projectPerHourRate.toString(),
         updatedTask.taskPerHourRate.toString(),
@@ -806,7 +816,7 @@ export class DataService {
       const updatedTaskData: Task = {
         ...updatedTask,
         id: taskId,
-        actualHours: updatedTask.actualHours,
+        actualHours: currentActualHours,
         calculatedAmount: calculatedAmount
       };
 
