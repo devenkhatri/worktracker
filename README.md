@@ -21,9 +21,12 @@ A comprehensive work tracking application built with Next.js that integrates wit
 - **Frontend**: Next.js 14 with App Router, React, TypeScript
 - **Styling**: Tailwind CSS, shadcn/ui components
 - **Charts**: Recharts for data visualization
-- **Backend**: Next.js API routes
-- **Database**: Google Sheets API integration
+- **Drag & Drop**: Native HTML5 API (with optional @hello-pangea/dnd support)
+- **Backend**: Next.js API routes with middleware authentication
+- **Database**: Google Sheets API integration with real-time sync
+- **Authentication**: Session-based with HTTP-only cookies
 - **Icons**: Lucide React
+- **Currency**: Indian Rupee (INR) formatting and calculations
 
 ## Google Sheets Setup
 
@@ -161,27 +164,41 @@ npm run dev
 ### Kanban Board
 1. Navigate to the Kanban page
 2. Select a project from the dropdown
-3. View all project tasks in a visual Kanban board
+3. View all project tasks in a visual Kanban board with 4 columns (To Do, In Progress, Review, Completed)
 4. Drag and drop tasks between columns to change their status
-5. Status changes are automatically saved to Google Sheets
+5. Double-click any task card to view detailed task information
+6. Status changes are automatically saved to Google Sheets
+7. Activity is logged for all status changes
 
 ### Time Tracking
-1. Navigate to Time Tracking
-2. Use the floating timer button (bottom-right) for real-time tracking:
-   - Select project and task
-   - Click "Start" to begin timing
-   - Use "Pause/Resume" as needed
-   - Click "Stop" to automatically log time (rounded to nearest minute)
-3. Or click "Manual Entry" to log time manually:
+1. **Real-Time Timer (Recommended)**:
+   - Use the floating timer button (bottom-right corner) available on all pages
+   - Select project and task from dropdowns
+   - Click "Start" to begin real-time timing
+   - Use "Pause/Resume" as needed during work
+   - Click "Stop" to automatically log time (minimum 1 minute, rounded to nearest minute)
+   - Data automatically refreshes after logging
+2. **Manual Entry**:
+   - Navigate to Time Tracking page and click "Manual Entry"
    - Select project and task
    - Enter start/end times (duration is auto-calculated)
    - Add description of work performed
+3. **View Time Entries**:
+   - See recent time entries with project/task context
+   - View time tracking statistics and weekly summaries
 
 ### Viewing Reports
 1. Go to the Reports page
 2. Use filters to view specific projects or all data
 3. View charts for project status, task priorities, and revenue analysis
 4. Export reports as needed
+
+### User Authentication
+1. **Login**: Access the application using credentials stored in the Users sheet
+2. **Session Management**: Secure 24-hour sessions with automatic expiration
+3. **User Profile**: View login history and session information
+4. **Last Login Tracking**: Automatic tracking of user login times
+5. **Logout**: Secure session termination
 
 ### Exporting Data
 1. Visit the Export page
@@ -203,6 +220,41 @@ The application maintains referential integrity between:
 - **Task Actual Hours**: Sum of time entries for that task
 - **Task Calculated Amount**: Billed hours × task per hour rate
 - **Time Entry Duration**: Auto-calculated from start/end times
+
+## Key Features & Improvements
+
+### Real-Time Time Tracking
+- **Floating Timer Button**: Always accessible from any page (bottom-right corner)
+- **Live Timer**: Real-time countdown with pause/resume functionality
+- **Minimum Time Validation**: Ensures at least 1 minute is tracked
+- **Automatic Data Refresh**: Latest time entries appear immediately after logging
+- **Session Persistence**: Timer state maintained during navigation
+
+### Enhanced Kanban Board
+- **Drag & Drop**: Move tasks between status columns (To Do → In Progress → Review → Completed)
+- **Task Details**: Double-click any task card to view comprehensive task information
+- **Real-Time Updates**: Status changes immediately sync to Google Sheets
+- **Visual Feedback**: Color-coded columns and priority indicators
+- **Progress Tracking**: Visual progress bars and completion percentages
+
+### Advanced Authentication
+- **Secure Sessions**: HTTP-only cookies with 24-hour expiration
+- **Login Tracking**: Automatic last login timestamp updates
+- **User Profiles**: View login history and session information
+- **Route Protection**: Middleware-based authentication for all protected routes
+- **Session Management**: Automatic cleanup and renewal
+
+### Activity & Audit Trail
+- **Comprehensive Logging**: All actions (create, update, status changes) are logged
+- **Real-Time Activity Feed**: Recent activities displayed on dashboard
+- **User Attribution**: Track who performed each action
+- **Detailed Context**: Full information about what changed and when
+
+### Currency & Localization
+- **Indian Rupee Support**: Full INR formatting with proper number localization
+- **Rate Calculations**: Project and task-specific hourly rates
+- **Financial Tracking**: Automatic amount calculations and revenue reporting
+- **Localized Formatting**: Indian number formatting (lakhs, crores)
 
 ## Deployment
 
@@ -236,6 +288,37 @@ The application can be deployed to any platform that supports Next.js:
 ## License
 
 This project is licensed under the MIT License.
+
+## Application Architecture
+
+### Frontend Architecture
+- **Next.js App Router**: Modern React framework with server-side rendering
+- **Component Structure**: Modular components with clear separation of concerns
+- **State Management**: React hooks with optimistic updates
+- **Authentication Context**: Global auth state management
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+
+### Backend Architecture
+- **API Routes**: RESTful endpoints for all data operations
+- **Middleware**: Route protection and session validation
+- **Data Service Layer**: Abstracted Google Sheets operations
+- **Error Handling**: Comprehensive error handling with user feedback
+- **Activity Logging**: Automatic audit trail for all operations
+
+### Data Flow
+1. **User Actions** → Frontend Components
+2. **API Calls** → Next.js API Routes
+3. **Data Processing** → DataService Layer
+4. **Google Sheets** → Real-time synchronization
+5. **Activity Logging** → Audit trail creation
+6. **UI Updates** → Optimistic updates with error handling
+
+### Security Features
+- **Session-based Authentication**: Secure HTTP-only cookies
+- **Route Protection**: Middleware-based access control
+- **Input Validation**: Client and server-side validation
+- **Error Handling**: Secure error messages without data exposure
+- **CSRF Protection**: Built-in Next.js CSRF protection
 
 ## Support
 
