@@ -13,9 +13,10 @@ interface KanbanColumnProps {
   };
   tasks: Task[];
   isDragging: boolean;
+  onTaskOpen?: (task: Task) => void;
 }
 
-export function KanbanColumn({ column, tasks, isDragging }: KanbanColumnProps) {
+export function KanbanColumn({ column, tasks, isDragging, onTaskOpen }: KanbanColumnProps) {
   return (
     <div className={cn(
       "flex flex-col rounded-lg border-2 border-dashed transition-colors",
@@ -48,6 +49,7 @@ export function KanbanColumn({ column, tasks, isDragging }: KanbanColumnProps) {
                 key={task.id}
                 task={task}
                 index={index}
+                onTaskOpen={onTaskOpen}
               />
             ))}
             {provided.placeholder}

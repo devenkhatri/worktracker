@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { TimeTickerModal } from './time-ticker-modal';
 import { Project, Task } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function FloatingTickerButton() {
@@ -86,7 +86,7 @@ export function FloatingTickerButton() {
         {loading ? (
           <Loader2 className="h-6 w-6 animate-spin text-white" />
         ) : (
-          <span>Start</span>          
+          <div className='flex'><Timer className="h-4 w-4" />&nbsp;<span>Start</span></div>
         )}
       </Button>
 

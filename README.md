@@ -6,13 +6,14 @@ A comprehensive work tracking application built with Next.js that integrates wit
 
 - **Project Management**: Create and track projects with client information, budgets, and timelines
 - **Task Assignment**: Assign tasks to team members with priorities and due dates
-- **Kanban Board**: Visual task management with drag-and-drop functionality
-- **Time Tracking**: Real-time timer with pause/resume functionality and manual time entry
-- **Google Sheets Integration**: Real-time synchronization with Google Sheets
-- **Dashboard Analytics**: Visual insights into project progress and team performance
-- **Export Functionality**: Export data in CSV or JSON formats
-- **User Authentication**: Secure login system with session management
-- **Activity Tracking**: Comprehensive audit trail of all system activities
+- **Kanban Board**: Visual task management with drag-and-drop functionality and detailed task views
+- **Real-Time Time Tracking**: Floating timer with pause/resume functionality and automatic data refresh
+- **Google Sheets Integration**: Real-time synchronization with Google Sheets for all data operations
+- **Dashboard Analytics**: Visual insights into project progress and team performance with recent activity feed
+- **User Authentication**: Secure login system with session management and last login tracking
+- **Activity Tracking**: Comprehensive audit trail of all system activities and changes
+- **Export Functionality**: Export data in CSV or JSON formats with filtering options
+- **Currency Support**: Full Indian Rupee (INR) support with proper formatting
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 
 ## Tech Stack

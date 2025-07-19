@@ -17,9 +17,10 @@ import {
 interface KanbanCardProps {
   task: Task;
   index: number;
+  onTaskOpen?: (task: Task) => void;
 }
 
-export function KanbanCard({ task, index }: KanbanCardProps) {
+export function KanbanCard({ task, index, onTaskOpen }: KanbanCardProps) {
   const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
       case 'High':
@@ -65,6 +66,12 @@ export function KanbanCard({ task, index }: KanbanCardProps) {
     }
   };
 
+  const handleDoubleClick = () => {
+    if (onTaskOpen) {
+      onTaskOpen(task);
+    }
+  };
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
@@ -72,10 +79,12 @@ export function KanbanCard({ task, index }: KanbanCardProps) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
+          onDoubleClick={handleDoubleClick}
           className={cn(
             "cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-md",
             snapshot.isDragging && "shadow-lg rotate-2 scale-105"
           )}
+          title="Double-click to view details"
         >
           <CardContent className="p-4 space-y-3">
             {/* Task Title */}

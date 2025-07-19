@@ -8,6 +8,7 @@ import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 interface KanbanBoardProps {
   tasks: Task[];
   onTaskStatusUpdate: (taskId: string, newStatus: Task['status']) => void;
+  onTaskOpen?: (task: Task) => void;
 }
 
 const COLUMNS: { id: Task['status']; title: string; color: string }[] = [
@@ -17,7 +18,7 @@ const COLUMNS: { id: Task['status']; title: string; color: string }[] = [
   { id: 'Completed', title: 'Completed', color: 'bg-green-100 border-green-200' },
 ];
 
-export function KanbanBoard({ tasks, onTaskStatusUpdate }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, onTaskStatusUpdate, onTaskOpen }: KanbanBoardProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const getTasksByStatus = (status: Task['status']) => {
@@ -60,6 +61,7 @@ export function KanbanBoard({ tasks, onTaskStatusUpdate }: KanbanBoardProps) {
             column={column}
             tasks={getTasksByStatus(column.id)}
             isDragging={isDragging}
+            onTaskOpen={onTaskOpen}
           />
         ))}
       </div>

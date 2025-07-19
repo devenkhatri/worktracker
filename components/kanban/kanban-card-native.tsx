@@ -20,7 +20,7 @@ interface KanbanCardNativeProps {
   onTaskOpen?: (task: Task) => void;
 }
 
-export function KanbanCardNative({ task, onDragStart, onDragEnd }: KanbanCardNativeProps) {
+export function KanbanCardNative({ task, onDragStart, onDragEnd, onTaskOpen }: KanbanCardNativeProps) {
   const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
       case 'High':
@@ -75,12 +75,20 @@ export function KanbanCardNative({ task, onDragStart, onDragEnd }: KanbanCardNat
     onDragEnd();
   };
 
+  const handleDoubleClick = () => {
+    if (onTaskOpen) {
+      onTaskOpen(task);
+    }
+  };
+
   return (
     <Card
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDoubleClick={handleDoubleClick}
       className="cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-md"
+      title="Double-click to view details"
     >
       <CardContent className="p-4 space-y-3">
         {/* Task Title */}
