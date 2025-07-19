@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Task } from '@/lib/types';
 import { KanbanColumn } from './kanban-column';
-import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -19,52 +18,41 @@ const COLUMNS: { id: Task['status']; title: string; color: string }[] = [
 ];
 
 export function KanbanBoard({ tasks, onTaskStatusUpdate, onTaskOpen }: KanbanBoardProps) {
-  const [isDragging, setIsDragging] = useState(false);
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
 
   const getTasksByStatus = (status: Task['status']) => {
     return tasks.filter(task => task.status === status);
   };
 
-  const handleDragStart = () => {
-    setIsDragging(true);
+  const handleDragStart = (task: Task) => {
+    setDraggedTask(task);
   };
 
-  const handleDragEnd = (result: DropResult) => {
-    setIsDragging(false);
-    
-    const { destination, source, draggableId } = result;
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+  };
 
-    // If dropped outside a droppable area
-    if (!destination) {
-      return;
+  const handleDrop = (newStatus: Task['status']) => {
+    if (draggedTask && draggedTask.status !== newStatus) {
+      onTaskStatusUpdate(draggedTask.id, newStatus);
     }
-
-    // If dropped in the same position
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    // Update task status
-    const newStatus = destination.droppableId as Task['status'];
-    onTaskStatusUpdate(draggableId, newStatus);
+    setDraggedTask(null);
   };
 
   return (
-    <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {COLUMNS.map((column) => (
-          <KanbanColumn
-            key={column.id}
-            column={column}
-            tasks={getTasksByStatus(column.id)}
-            isDragging={isDragging}
-            onTaskOpen={onTaskOpen}
-          />
-        ))}
-      </div>
-    </DragDropContext>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {COLUMNS.map((column) => (
+        <KanbanColumn
+          key={column.id}
+          column={column}
+          tasks={getTasksByStatus(column.id)}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDrop={handleDrop}
+          onTaskOpen={onTaskOpen}
+          isDraggedOver={draggedTask?.status !== column.id}
+        />
+      ))}
+    </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
+import React from 'react';
 import { Task } from '@/lib/types';
 import { KanbanCard } from './kanban-card';
-import { Droppable } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
 
 interface KanbanColumnProps {
@@ -12,17 +12,41 @@ interface KanbanColumnProps {
     color: string;
   };
   tasks: Task[];
-  isDragging: boolean;
+  onDragStart: (task: Task) => void;
+  onDragEnd: () => void;
+  onDrop: (status: Task['status']) => void;
   onTaskOpen?: (task: Task) => void;
+  isDraggedOver: boolean;
 }
 
-export function KanbanColumn({ column, tasks, isDragging, onTaskOpen }: KanbanColumnProps) {
+export function KanbanColumn({ 
+  column, 
+  tasks, 
+  onDragStart, 
+  onDragEnd, 
+  onDrop,
+  onTaskOpen,
+  isDraggedOver 
+}: KanbanColumnProps) {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    onDrop(column.id);
+  };
+
   return (
-    <div className={cn(
-      "flex flex-col rounded-lg border-2 border-dashed transition-colors",
-      column.color,
-      isDragging && "border-opacity-50"
-    )}>
+    <div 
+      className={cn(
+        "flex flex-col rounded-lg border-2 border-dashed transition-colors",
+        column.color,
+        isDraggedOver && "border-opacity-50"
+      )}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       {/* Column Header */}
       <div className="p-4 border-b border-current border-opacity-20">
         <div className="flex items-center justify-between">
@@ -33,36 +57,25 @@ export function KanbanColumn({ column, tasks, isDragging, onTaskOpen }: KanbanCo
         </div>
       </div>
 
-      {/* Droppable Area */}
-      <Droppable droppableId={column.id}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={cn(
-              "flex-1 p-4 space-y-3 min-h-[200px] transition-colors",
-              snapshot.isDraggedOver && "bg-opacity-50"
-            )}
-          >
-            {tasks.map((task, index) => (
-              <KanbanCard
-                key={task.id}
-                task={task}
-                index={index}
-                onTaskOpen={onTaskOpen}
-              />
-            ))}
-            {provided.placeholder}
-            
-            {tasks.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">No tasks</p>
-                <p className="text-xs">Drag tasks here</p>
-              </div>
-            )}
+      {/* Tasks Area */}
+      <div className="flex-1 p-4 space-y-3 min-h-[200px]">
+        {tasks.map((task) => (
+          <KanbanCard
+            key={task.id}
+            task={task}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onTaskOpen={onTaskOpen}
+          />
+        ))}
+        
+        {tasks.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-sm">No tasks</p>
+            <p className="text-xs">Drag tasks here</p>
           </div>
         )}
-      </Droppable>
+      </div>
     </div>
   );
 }

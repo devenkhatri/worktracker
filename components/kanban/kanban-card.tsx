@@ -1,7 +1,7 @@
 "use client";
 
+import React from 'react';
 import { Task } from '@/lib/types';
-import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -16,11 +16,12 @@ import {
 
 interface KanbanCardProps {
   task: Task;
-  index: number;
+  onDragStart: (task: Task) => void;
+  onDragEnd: () => void;
   onTaskOpen?: (task: Task) => void;
 }
 
-export function KanbanCard({ task, index, onTaskOpen }: KanbanCardProps) {
+export function KanbanCard({ task, onDragStart, onDragEnd, onTaskOpen }: KanbanCardProps) {
   const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
       case 'High':
@@ -72,20 +73,24 @@ export function KanbanCard({ task, index, onTaskOpen }: KanbanCardProps) {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    onDragStart(task);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    onDragEnd();
+  };
+
   return (
-    <Draggable draggableId={task.id} index={index}>
-      {(provided, snapshot) => (
-        <Card
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          onDoubleClick={handleDoubleClick}
-          className={cn(
-            "cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-md",
-            snapshot.isDragging && "shadow-lg rotate-2 scale-105"
-          )}
-          title="Double-click to view details"
-        >
+    <Card
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDoubleClick={handleDoubleClick}
+      className="cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-md"
+      title="Double-click to view details"
+    >
           <CardContent className="p-4 space-y-3">
             {/* Task Title */}
             <div>
@@ -155,7 +160,5 @@ export function KanbanCard({ task, index, onTaskOpen }: KanbanCardProps) {
             )}
           </CardContent>
         </Card>
-      )}
-    </Draggable>
   );
 }

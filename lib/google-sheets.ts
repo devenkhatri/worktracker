@@ -544,7 +544,7 @@ export class GoogleSheetsService {
         this.getSheetData('Users!1:1')
       ]);
       
-      const headerIssues = [];
+      const headerIssues: string[] = [];
       const expectedHeaders = {
         Projects: ['Project ID', 'Project Name', 'Client Name', 'Project Description', 'Start Date', 'End Date', 'Status', 'Budget', 'Per Hour Rate', 'Total Estimated Hours', 'Total Actual Hours', 'Total Billed Hours', 'Total Amount'],
         Tasks: ['Task ID', 'Project ID', 'Task Name', 'Task Description', 'Assigned To', 'Priority', 'Status', 'Estimated Hours', 'Actual Hours', 'Billed Hours', 'Project Per Hour Rate', 'Task Per Hour Rate', 'Calculated Amount', 'Due Date', 'Artifacts'],
