@@ -46,8 +46,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 p-6">
-        {children}
+      <main className="flex-1 lg:ml-64 p-3 sm:p-4 lg:p-6 min-w-0">
+        <div className="max-w-full overflow-x-hidden">
+          {children}
+        </div>
       </main>
     </div>
   );

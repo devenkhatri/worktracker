@@ -111,7 +111,7 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="priority">Priority</Label>
               <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
@@ -150,7 +150,7 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="estimatedHours">Estimated Hours</Label>
               <Input
@@ -197,11 +197,11 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
             />
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" className="w-full sm:w-auto">
               {isEditing ? 'Update Task' : 'Create Task'}
             </Button>
           </div>

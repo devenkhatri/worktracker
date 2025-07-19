@@ -158,10 +158,10 @@ export default function TimeTrackingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen px-4">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading time tracking data...</p>
+          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm sm:text-base">Loading time tracking data...</p>
         </div>
       </div>
     );
@@ -169,33 +169,35 @@ export default function TimeTrackingPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center space-x-2">
-            <Clock className="h-8 w-8" />
-            <span>Time Tracking</span>
-          </h1>
-          <p className="text-muted-foreground">
-            Track time spent on projects and tasks
-          </p>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button
-            onClick={() => setShowTicker(true)}
-            className="flex items-center space-x-2"
-          >
-            <Timer className="h-4 w-4" />
-            <span>Start Timer</span>
-          </Button>
-          <Button
-            onClick={() => setShowForm(true)}
-            variant="outline"
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Manual Entry</span>
-          </Button>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none pb-4 mb-6 lg:pb-0 lg:mb-0 lg:static">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-12 lg:pt-0">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center space-x-2">
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8" />
+              <span>Time Tracking</span>
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Track time spent on projects and tasks
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+            <Button
+              onClick={() => setShowTicker(true)}
+              className="flex items-center justify-center space-x-2"
+            >
+              <Timer className="h-4 w-4" />
+              <span>Start Timer</span>
+            </Button>
+            <Button
+              onClick={() => setShowForm(true)}
+              variant="outline"
+              className="flex items-center justify-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Manual Entry</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -207,7 +209,7 @@ export default function TimeTrackingPage() {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
@@ -263,35 +265,35 @@ export default function TimeTrackingPage() {
           ) : (
             <div className="space-y-4">
               {recentTimeEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h4 className="font-medium">{getTaskName(entry.taskId)}</h4>
-                      <span className="text-sm text-muted-foreground">•</span>
-                      <span className="text-sm text-muted-foreground">{getProjectName(entry.projectId)}</span>
+                <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2">
+                      <h4 className="font-medium truncate">{getTaskName(entry.taskId)}</h4>
+                      <span className="hidden sm:inline text-sm text-muted-foreground">•</span>
+                      <span className="text-sm text-muted-foreground truncate">{getProjectName(entry.projectId)}</span>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
                         <span>{formatDate(entry.date)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-3 w-3" />
-                        <span>{entry.startTime} - {entry.endTime}</span>
+                        <span className="text-xs sm:text-sm">{entry.startTime} - {entry.endTime}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <User className="h-3 w-3" />
-                        <span>{entry.userName}</span>
+                        <span className="truncate max-w-20 sm:max-w-none">{entry.userName}</span>
                       </div>
                     </div>
                     
                     {entry.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{entry.description}</p>
+                      <p className="text-sm text-muted-foreground mt-2 break-words">{entry.description}</p>
                     )}
                   </div>
                   
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-between sm:justify-end space-x-4">
                     <div className="text-right">
                       <div className="text-lg font-semibold">{formatDuration(entry.duration)}</div>
                     </div>
@@ -299,10 +301,10 @@ export default function TimeTrackingPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditTimeEntry(entry)}
-                      className="flex items-center space-x-1"
+                      className="flex items-center space-x-1 text-xs sm:text-sm"
                     >
                       <Edit className="h-3 w-3" />
-                      <span>Edit</span>
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                   </div>
                 </div>
@@ -323,8 +325,8 @@ export default function TimeTrackingPage() {
 
       {/* Manual Time Entry Form */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background p-4 sm:p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <TimeEntryForm
               onSubmit={handleTimeEntrySubmit}
               onCancel={handleCancelEdit}

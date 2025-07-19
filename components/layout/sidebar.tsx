@@ -44,7 +44,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="sm"
-        className="lg:hidden fixed top-4 left-4 z-50"
+        className="lg:hidden fixed top-3 left-3 z-50 bg-background/80 backdrop-blur-sm border shadow-sm"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}

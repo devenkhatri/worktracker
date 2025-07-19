@@ -113,7 +113,7 @@ export function TimeEntryForm({ onSubmit, onCancel, projects, tasks, initialData
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="date">Date</Label>
               <Input
@@ -165,11 +165,11 @@ export function TimeEntryForm({ onSubmit, onCancel, projects, tasks, initialData
             />
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" className="w-full sm:w-auto">
               {isEditing ? 'Update Entry' : 'Log Time'}
             </Button>
           </div>

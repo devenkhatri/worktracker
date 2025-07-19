@@ -247,10 +247,10 @@ export default function TasksPage() {
           variant="outline"
           size="sm"
           onClick={() => handleEditTask(task)}
-          className="flex items-center space-x-1"
+          className="flex items-center space-x-1 text-xs sm:text-sm"
         >
           <Edit className="h-3 w-3" />
-          <span>Edit</span>
+          <span className="hidden sm:inline">Edit</span>
         </Button>
       )
     },
@@ -261,29 +261,31 @@ export default function TasksPage() {
     
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <h4 className="font-medium mb-2">Task Details</h4>
-            <p className="text-sm text-muted-foreground mb-2">{task.taskDescription}</p>
-            <p className="text-sm">
-              <span className="font-medium">Task Rate:</span> ${task.taskPerHourRate}/hour
-            </p>
-            <p className="text-sm">
-              <span className="font-medium">Billed Hours:</span> {task.billedHours}h
-            </p>
-            {task.artifacts && (
+            <p className="text-sm text-muted-foreground mb-2 break-words">{task.taskDescription}</p>
+            <div className="space-y-1">
               <p className="text-sm">
-                <span className="font-medium">Artifacts:</span> {task.artifacts}
+                <span className="font-medium">Task Rate:</span> ₹{task.taskPerHourRate}/hour
               </p>
-            )}
+              <p className="text-sm">
+                <span className="font-medium">Billed Hours:</span> {task.billedHours}h
+              </p>
+              {task.artifacts && (
+                <p className="text-sm break-words">
+                  <span className="font-medium">Artifacts:</span> {task.artifacts}
+                </p>
+              )}
+            </div>
           </div>
           <div>
             <h4 className="font-medium mb-2">Time Entries ({taskTimeEntries.length})</h4>
             <div className="space-y-1">
               {taskTimeEntries.slice(0, 5).map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between text-sm">
-                  <span>{entry.date}</span>
-                  <span className="text-muted-foreground">{entry.duration.toFixed(1)}h</span>
+                <div key={entry.id} className="flex items-center justify-between text-sm gap-2">
+                  <span className="truncate flex-1">{entry.date}</span>
+                  <span className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{entry.duration.toFixed(1)}h</span>
                 </div>
               ))}
               {taskTimeEntries.length > 5 && (
@@ -300,10 +302,10 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen px-4">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading tasks...</p>
+          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm sm:text-base">Loading tasks...</p>
         </div>
       </div>
     );
@@ -312,13 +314,15 @@ export default function TasksPage() {
   if (showForm) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {editingTask ? 'Edit Task' : 'Create New Task'}
-          </h1>
-          <p className="text-muted-foreground">
-            {editingTask ? 'Update task details' : 'Add a new task to an existing project'}
-          </p>
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none pb-4 mb-6 lg:pb-0 lg:mb-0 lg:static">
+          <div className="pt-12 lg:pt-0">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              {editingTask ? 'Edit Task' : 'Create New Task'}
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              {editingTask ? 'Update task details' : 'Add a new task to an existing project'}
+            </p>
+          </div>
         </div>
 
         <TaskForm
@@ -334,17 +338,19 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
-          <p className="text-muted-foreground">
-            Manage tasks and track their progress
-          </p>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none pb-4 mb-6 lg:pb-0 lg:mb-0 lg:static">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-12 lg:pt-0">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tasks</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Manage tasks and track their progress
+            </p>
+          </div>
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Task
+          </Button>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Task
-        </Button>
       </div>
 
       {error && (

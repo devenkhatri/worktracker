@@ -37,7 +37,7 @@ export default function ProjectsPage() {
           const projectsError = !projectsResponse.ok ? await projectsResponse.text() : null;
           const tasksError = !tasksResponse.ok ? await tasksResponse.text() : null;
           console.error('Projects: API errors:', { projectsError, tasksError });
-          
+
           // Check if it's a configuration error
           const errorText = projectsError || tasksError || '';
           if (errorText.includes('configuration') || errorText.includes('environment')) {
@@ -127,7 +127,7 @@ export default function ProjectsPage() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Project update failed:', errorText);
-          
+
           let errorMessage = 'Failed to update project';
           try {
             const errorJson = JSON.parse(errorText);
@@ -135,7 +135,7 @@ export default function ProjectsPage() {
           } catch {
             errorMessage = errorText || 'Failed to update project';
           }
-          
+
           throw new Error(errorMessage);
         }
 
@@ -154,7 +154,7 @@ export default function ProjectsPage() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Project creation failed:', errorText);
-          
+
           let errorMessage = 'Failed to create project';
           try {
             const errorJson = JSON.parse(errorText);
@@ -162,14 +162,14 @@ export default function ProjectsPage() {
           } catch {
             errorMessage = errorText || 'Failed to create project';
           }
-          
+
           throw new Error(errorMessage);
         }
 
         const newProject = await response.json();
         setProjects(prev => [...prev, newProject]);
       }
-      
+
       setShowForm(false);
       setEditingProject(null);
     } catch (err) {
@@ -199,27 +199,27 @@ export default function ProjectsPage() {
     { key: 'status', label: 'Status', sortable: true },
     { key: 'startDate', label: 'Start Date', sortable: true },
     { key: 'endDate', label: 'End Date', sortable: true },
-    { 
-      key: 'budget', 
-      label: 'Budget', 
+    {
+      key: 'budget',
+      label: 'Budget',
       sortable: true,
       render: (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
     },
-    { 
-      key: 'totalEstimatedHours', 
-      label: 'Est. Hours', 
+    {
+      key: 'totalEstimatedHours',
+      label: 'Est. Hours',
       sortable: true,
       render: (value: number) => `${value}h`
     },
-    { 
-      key: 'totalActualHours', 
-      label: 'Actual Hours', 
+    {
+      key: 'totalActualHours',
+      label: 'Actual Hours',
       sortable: true,
       render: (value: number) => `${value}h`
     },
-    { 
-      key: 'totalAmount', 
-      label: 'Total Amount', 
+    {
+      key: 'totalAmount',
+      label: 'Total Amount',
       sortable: true,
       render: (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
     },
@@ -232,10 +232,10 @@ export default function ProjectsPage() {
           variant="outline"
           size="sm"
           onClick={() => handleEditProject(project)}
-          className="flex items-center space-x-1"
+          className="flex items-center space-x-1 text-xs sm:text-sm"
         >
           <Edit className="h-3 w-3" />
-          <span>Edit</span>
+          <span className="hidden sm:inline">Edit</span>
         </Button>
       )
     },
@@ -243,27 +243,29 @@ export default function ProjectsPage() {
 
   const renderExpandedRow = (project: Project) => {
     const projectTasks = getTasksForProject(project.id);
-    
+
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <h4 className="font-medium mb-2">Project Details</h4>
-            <p className="text-sm text-muted-foreground mb-2">{project.projectDescription}</p>
-            <p className="text-sm">
-              <span className="font-medium">Per Hour Rate:</span> ₹{project.perHourRate}
-            </p>
-            <p className="text-sm">
-              <span className="font-medium">Billed Hours:</span> {project.totalBilledHours}h
-            </p>
+            <p className="text-sm text-muted-foreground mb-2 break-words">{project.projectDescription}</p>
+            <div className="space-y-1">
+              <p className="text-sm">
+                <span className="font-medium">Per Hour Rate:</span> ₹{project.perHourRate}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">Billed Hours:</span> {project.totalBilledHours}h
+              </p>
+            </div>
           </div>
           <div>
             <h4 className="font-medium mb-2">Tasks ({projectTasks.length})</h4>
             <div className="space-y-1">
               {projectTasks.slice(0, 5).map((task) => (
-                <div key={task.id} className="flex items-center justify-between text-sm">
-                  <span>{task.taskName}</span>
-                  <span className="text-muted-foreground">{task.status}</span>
+                <div key={task.id} className="flex items-center justify-between text-sm gap-2">
+                  <span className="truncate flex-1">{task.taskName}</span>
+                  <span className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{task.status}</span>
                 </div>
               ))}
               {projectTasks.length > 5 && (
@@ -280,10 +282,10 @@ export default function ProjectsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen px-4">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading projects...</p>
+          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm sm:text-base">Loading projects...</p>
         </div>
       </div>
     );
@@ -292,11 +294,15 @@ export default function ProjectsPage() {
   if (showForm) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create New Project</h1>
-          <p className="text-muted-foreground">
-            Add a new project to start tracking tasks and time
-          </p>
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none pb-4 mb-6 lg:pb-0 lg:mb-0 lg:static">
+          <div className="pt-12 lg:pt-0">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              {editingProject ? 'Edit Project' : 'Create New Project'}
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              {editingProject ? 'Update project details' : 'Add a new project to start tracking tasks and time'}
+            </p>
+          </div>
         </div>
 
         <ProjectForm
@@ -311,17 +317,19 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">
-            Manage your projects and track their progress
-          </p>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none pb-4 mb-6 lg:pb-0 lg:mb-0 lg:static">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-12 lg:pt-0">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Projects</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Manage your projects and track their progress
+            </p>
+          </div>
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Project
+          </Button>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Project
-        </Button>
       </div>
 
       {error && (
@@ -338,10 +346,10 @@ export default function ProjectsPage() {
       {configValid === true && projects.length === 0 && !loading && (
         <Card>
           <CardHeader>
-            <CardTitle>No Projects Found</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">No Projects Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 text-sm sm:text-base">
               No projects were found in your Google Sheet. This could mean:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
@@ -350,7 +358,7 @@ export default function ProjectsPage() {
               <li>There might be an issue with the sheet structure</li>
             </ul>
             <div className="mt-4">
-              <Button onClick={() => setShowForm(true)}>
+              <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Project
               </Button>
