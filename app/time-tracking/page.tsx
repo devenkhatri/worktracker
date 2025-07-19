@@ -13,7 +13,8 @@ import {
   Loader2,
   AlertCircle,
   Calendar,
-  User
+  User,
+  Edit
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -25,6 +26,7 @@ export default function TimeTrackingPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showTicker, setShowTicker] = useState(false);
+  const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -59,25 +61,66 @@ export default function TimeTrackingPage() {
 
   const handleTimeEntrySubmit = async (timeEntry: Omit<TimeEntry, 'id' | 'duration'>) => {
     try {
-      const response = await fetch('/api/time-entries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(timeEntry),
-      });
+      if (editingTimeEntry) {
+        console.log('Updating time entry with data:', timeEntry);
+        const response = await fetch(`/api/time-entries/${editingTimeEntry.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(timeEntry),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to create time entry');
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Time entry update failed:', errorText);
+          
+          let errorMessage = 'Failed to update time entry';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorText;
+          } catch {
+            errorMessage = errorText || 'Failed to update time entry';
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        const updatedTimeEntry = await response.json();
+        setTimeEntries(prev => prev.map(te => te.id === editingTimeEntry.id ? updatedTimeEntry : te));
+      } else {
+        const response = await fetch('/api/time-entries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(timeEntry),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create time entry');
+        }
+
+        // Refresh data
+        await fetchData();
       }
-
-      // Refresh data
-      await fetchData();
+      
       setShowForm(false);
+      setEditingTimeEntry(null);
     } catch (err) {
-      console.error('Error creating time entry:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create time entry');
+      console.error('Error saving time entry:', err);
+      setError(editingTimeEntry ? 'Failed to update time entry. Please try again.' : 'Failed to create time entry. Please try again.');
     }
+  };
+
+  const handleEditTimeEntry = (timeEntry: TimeEntry) => {
+    setEditingTimeEntry(timeEntry);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setShowForm(false);
+    setEditingTimeEntry(null);
   };
 
   const formatDuration = (duration: number) => {
@@ -248,8 +291,19 @@ export default function TimeTrackingPage() {
                     )}
                   </div>
                   
-                  <div className="text-right">
-                    <div className="text-lg font-semibold">{formatDuration(entry.duration)}</div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <div className="text-lg font-semibold">{formatDuration(entry.duration)}</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditTimeEntry(entry)}
+                      className="flex items-center space-x-1"
+                    >
+                      <Edit className="h-3 w-3" />
+                      <span>Edit</span>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -273,9 +327,11 @@ export default function TimeTrackingPage() {
           <div className="bg-background p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <TimeEntryForm
               onSubmit={handleTimeEntrySubmit}
-              onCancel={() => setShowForm(false)}
+              onCancel={handleCancelEdit}
               projects={projects}
               tasks={tasks}
+              initialData={editingTimeEntry || undefined}
+              isEditing={!!editingTimeEntry}
             />
           </div>
         </div>

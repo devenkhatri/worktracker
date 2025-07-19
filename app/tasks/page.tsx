@@ -6,7 +6,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { TaskForm } from '@/components/task-form';
 import { ConfigVerification } from '@/components/config-verification';
 import { Project, Task, TimeEntry } from '@/lib/types';
-import { Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, Edit } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function TasksPage() {
@@ -16,6 +16,7 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [configValid, setConfigValid] = useState<boolean | null>(true);
 
   useEffect(() => {
@@ -123,43 +124,83 @@ export default function TasksPage() {
 
   const handleCreateTask = async (taskData: Omit<Task, 'id' | 'actualHours' | 'calculatedAmount'>) => {
     try {
-      console.log('Creating task with data:', taskData);
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(taskData),
-      });
+      if (editingTask) {
+        console.log('Updating task with data:', taskData);
+        const response = await fetch(`/api/tasks/${editingTask.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskData),
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Task creation failed:', errorText);
-        
-        // Try to parse error message
-        let errorMessage = 'Failed to create task';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorText;
-        } catch {
-          errorMessage = errorText || 'Failed to create task';
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Task update failed:', errorText);
+          
+          let errorMessage = 'Failed to update task';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorText;
+          } catch {
+            errorMessage = errorText || 'Failed to update task';
+          }
+          
+          throw new Error(errorMessage);
         }
-        
-        throw new Error(errorMessage);
-      }
 
-      const newTask = await response.json();
-      setTasks(prev => [...prev, newTask]);
+        const updatedTask = await response.json();
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? updatedTask : t));
+      } else {
+        console.log('Creating task with data:', taskData);
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskData),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Task creation failed:', errorText);
+          
+          let errorMessage = 'Failed to create task';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorText;
+          } catch {
+            errorMessage = errorText || 'Failed to create task';
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        const newTask = await response.json();
+        setTasks(prev => [...prev, newTask]);
+      }
+      
       setShowForm(false);
+      setEditingTask(null);
     } catch (err) {
-      console.error('Error creating task:', err);
-      setError('Failed to create task. Please try again.');
+      console.error('Error saving task:', err);
+      setError(editingTask ? 'Failed to update task. Please try again.' : 'Failed to create task. Please try again.');
     }
   };
 
   const getProjectName = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     return project ? `${project.projectName} - ${project.clientName}` : 'Unknown Project';
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setShowForm(false);
+    setEditingTask(null);
   };
 
   const getTimeEntriesForTask = (taskId: string) => {
@@ -196,6 +237,22 @@ export default function TasksPage() {
       label: 'Amount', 
       sortable: true,
       render: (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (_: any, task: Task) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEditTask(task)}
+          className="flex items-center space-x-1"
+        >
+          <Edit className="h-3 w-3" />
+          <span>Edit</span>
+        </Button>
+      )
     },
   ];
 
@@ -256,16 +313,20 @@ export default function TasksPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create New Task</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {editingTask ? 'Edit Task' : 'Create New Task'}
+          </h1>
           <p className="text-muted-foreground">
-            Add a new task to an existing project
+            {editingTask ? 'Update task details' : 'Add a new task to an existing project'}
           </p>
         </div>
 
         <TaskForm
           onSubmit={handleCreateTask}
-          onCancel={() => setShowForm(false)}
+          onCancel={handleCancelEdit}
           projects={projects}
+          initialData={editingTask || undefined}
+          isEditing={!!editingTask}
         />
       </div>
     );

@@ -15,9 +15,10 @@ interface TimeEntryFormProps {
   projects: Project[];
   tasks: Task[];
   initialData?: Partial<TimeEntry>;
+  isEditing?: boolean;
 }
 
-export function TimeEntryForm({ onSubmit, onCancel, projects, tasks, initialData }: TimeEntryFormProps) {
+export function TimeEntryForm({ onSubmit, onCancel, projects, tasks, initialData, isEditing = false }: TimeEntryFormProps) {
   const [formData, setFormData] = useState({
     projectId: initialData?.projectId || '',
     taskId: initialData?.taskId || '',
@@ -70,7 +71,7 @@ export function TimeEntryForm({ onSubmit, onCancel, projects, tasks, initialData
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? 'Edit Time Entry' : 'Log Time Entry'}</CardTitle>
+        <CardTitle>{isEditing ? 'Edit Time Entry' : 'Log Time Entry'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -169,7 +170,7 @@ export function TimeEntryForm({ onSubmit, onCancel, projects, tasks, initialData
               Cancel
             </Button>
             <Button type="submit">
-              {initialData ? 'Update Entry' : 'Log Time'}
+              {isEditing ? 'Update Entry' : 'Log Time'}
             </Button>
           </div>
         </form>

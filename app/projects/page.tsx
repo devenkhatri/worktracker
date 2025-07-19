@@ -7,7 +7,7 @@ import { ProjectForm } from '@/components/project-form';
 import { ConfigVerification } from '@/components/config-verification';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Project, Task } from '@/lib/types';
-import { Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, Edit } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function ProjectsPage() {
@@ -16,6 +16,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [configValid, setConfigValid] = useState<boolean | null>(true); // Start with true to attempt loading
 
   useEffect(() => {
@@ -113,38 +114,78 @@ export default function ProjectsPage() {
 
   const handleCreateProject = async (projectData: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>) => {
     try {
-      console.log('Creating project with data:', projectData);
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
-      });
+      if (editingProject) {
+        console.log('Updating project with data:', projectData);
+        const response = await fetch(`/api/projects/${editingProject.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(projectData),
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Project creation failed:', errorText);
-        
-        // Try to parse error message
-        let errorMessage = 'Failed to create project';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorText;
-        } catch {
-          errorMessage = errorText || 'Failed to create project';
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Project update failed:', errorText);
+          
+          let errorMessage = 'Failed to update project';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorText;
+          } catch {
+            errorMessage = errorText || 'Failed to update project';
+          }
+          
+          throw new Error(errorMessage);
         }
-        
-        throw new Error(errorMessage);
-      }
 
-      const newProject = await response.json();
-      setProjects(prev => [...prev, newProject]);
+        const updatedProject = await response.json();
+        setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
+      } else {
+        console.log('Creating project with data:', projectData);
+        const response = await fetch('/api/projects', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(projectData),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Project creation failed:', errorText);
+          
+          let errorMessage = 'Failed to create project';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorText;
+          } catch {
+            errorMessage = errorText || 'Failed to create project';
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        const newProject = await response.json();
+        setProjects(prev => [...prev, newProject]);
+      }
+      
       setShowForm(false);
+      setEditingProject(null);
     } catch (err) {
-      console.error('Error creating project:', err);
-      setError('Failed to create project. Please try again.');
+      console.error('Error saving project:', err);
+      setError(editingProject ? 'Failed to update project. Please try again.' : 'Failed to create project. Please try again.');
     }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setShowForm(false);
+    setEditingProject(null);
   };
 
   const getTasksForProject = (projectId: string) => {
@@ -181,6 +222,22 @@ export default function ProjectsPage() {
       label: 'Total Amount', 
       sortable: true,
       render: (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (_: any, project: Project) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEditProject(project)}
+          className="flex items-center space-x-1"
+        >
+          <Edit className="h-3 w-3" />
+          <span>Edit</span>
+        </Button>
+      )
     },
   ];
 
@@ -244,7 +301,9 @@ export default function ProjectsPage() {
 
         <ProjectForm
           onSubmit={handleCreateProject}
-          onCancel={() => setShowForm(false)}
+          onCancel={handleCancelEdit}
+          initialData={editingProject || undefined}
+          isEditing={!!editingProject}
         />
       </div>
     );

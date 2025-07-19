@@ -14,9 +14,10 @@ interface TaskFormProps {
   onCancel: () => void;
   projects: Project[];
   initialData?: Partial<Task>;
+  isEditing?: boolean;
 }
 
-export function TaskForm({ onSubmit, onCancel, projects, initialData }: TaskFormProps) {
+export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing = false }: TaskFormProps) {
   const [formData, setFormData] = useState({
     projectId: initialData?.projectId || '',
     taskName: initialData?.taskName || '',
@@ -60,7 +61,7 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData }: TaskForm
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? 'Edit Task' : 'Create New Task'}</CardTitle>
+        <CardTitle>{isEditing ? 'Edit Task' : 'Create New Task'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -201,7 +202,7 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData }: TaskForm
               Cancel
             </Button>
             <Button type="submit">
-              {initialData ? 'Update Task' : 'Create Task'}
+              {isEditing ? 'Update Task' : 'Create Task'}
             </Button>
           </div>
         </form>

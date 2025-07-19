@@ -13,9 +13,10 @@ interface ProjectFormProps {
   onSubmit: (project: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>) => void;
   onCancel: () => void;
   initialData?: Partial<Project>;
+  isEditing?: boolean;
 }
 
-export function ProjectForm({ onSubmit, onCancel, initialData }: ProjectFormProps) {
+export function ProjectForm({ onSubmit, onCancel, initialData, isEditing = false }: ProjectFormProps) {
   const [formData, setFormData] = useState({
     projectName: initialData?.projectName || '',
     clientName: initialData?.clientName || '',
@@ -44,7 +45,7 @@ export function ProjectForm({ onSubmit, onCancel, initialData }: ProjectFormProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? 'Edit Project' : 'Create New Project'}</CardTitle>
+        <CardTitle>{isEditing ? 'Edit Project' : 'Create New Project'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -170,7 +171,7 @@ export function ProjectForm({ onSubmit, onCancel, initialData }: ProjectFormProp
               Cancel
             </Button>
             <Button type="submit">
-              {initialData ? 'Update Project' : 'Create Project'}
+              {isEditing ? 'Update Project' : 'Create Project'}
             </Button>
           </div>
         </form>

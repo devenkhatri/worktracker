@@ -668,6 +668,225 @@ export class DataService {
     }
   }
 
+  async updateProject(projectId: string, updatedProject: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>): Promise<Project> {
+    try {
+      console.log(`DataService: Updating project ${projectId}`);
+      
+      // Validate project data
+      this.validateProjectData(updatedProject);
+      
+      // Get all projects to find the row number
+      const response = await this.sheetsService.getSheetData('Projects!A:M');
+      
+      if (!response.values || response.values.length === 0) {
+        throw new Error('No projects found in sheet');
+      }
+
+      // Find the project's row
+      let projectRowIndex = -1;
+      for (let i = 1; i < response.values.length; i++) {
+        if (response.values[i][0] === projectId) {
+          projectRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+          break;
+        }
+      }
+
+      if (projectRowIndex === -1) {
+        throw new Error(`Project ${projectId} not found in Projects sheet`);
+      }
+
+      // Calculate total amount
+      const totalAmount = updatedProject.totalBilledHours * updatedProject.perHourRate;
+
+      // Update the entire row
+      const values = [[
+        projectId, // Keep the same ID
+        updatedProject.projectName,
+        updatedProject.clientName,
+        updatedProject.projectDescription,
+        updatedProject.startDate,
+        updatedProject.endDate,
+        updatedProject.status,
+        updatedProject.budget.toString(),
+        updatedProject.perHourRate.toString(),
+        updatedProject.totalEstimatedHours.toString(),
+        updatedProject.totalActualHours.toString(), // Keep existing actual hours
+        updatedProject.totalBilledHours.toString(),
+        totalAmount.toString(),
+      ]];
+
+      const range = `Projects!A${projectRowIndex}:M${projectRowIndex}`;
+      await this.sheetsService.updateSheetData(range, values);
+
+      // Log activity
+      await this.logActivity(
+        'project_updated',
+        `Project "${updatedProject.projectName}" updated`,
+        projectId,
+        updatedProject.projectName,
+        'System'
+      );
+
+      const updatedProjectData: Project = {
+        ...updatedProject,
+        id: projectId,
+        totalActualHours: updatedProject.totalActualHours,
+        totalAmount: totalAmount
+      };
+
+      console.log(`DataService: Successfully updated project ${projectId}`);
+      return updatedProjectData;
+    } catch (error) {
+      console.error('DataService: Error updating project:', error);
+      throw new Error(`Failed to update project: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async updateTask(taskId: string, updatedTask: Omit<Task, 'id' | 'actualHours' | 'calculatedAmount'>): Promise<Task> {
+    try {
+      console.log(`DataService: Updating task ${taskId}`);
+      
+      // Validate task data
+      this.validateTaskData(updatedTask);
+      
+      // Get all tasks to find the row number
+      const response = await this.sheetsService.getSheetData('Tasks!A:R');
+      
+      if (!response.values || response.values.length === 0) {
+        throw new Error('No tasks found in sheet');
+      }
+
+      // Find the task's row
+      let taskRowIndex = -1;
+      for (let i = 1; i < response.values.length; i++) {
+        if (response.values[i][0] === taskId) {
+          taskRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+          break;
+        }
+      }
+
+      if (taskRowIndex === -1) {
+        throw new Error(`Task ${taskId} not found in Tasks sheet`);
+      }
+
+      // Calculate amount
+      const calculatedAmount = updatedTask.billedHours * updatedTask.taskPerHourRate;
+
+      // Update the entire row
+      const values = [[
+        taskId, // Keep the same ID
+        updatedTask.projectId,
+        updatedTask.taskName,
+        updatedTask.taskDescription,
+        updatedTask.assignedTo,
+        updatedTask.priority,
+        updatedTask.status,
+        updatedTask.estimatedHours.toString(),
+        updatedTask.actualHours.toString(), // Keep existing actual hours
+        updatedTask.billedHours.toString(),
+        updatedTask.projectPerHourRate.toString(),
+        updatedTask.taskPerHourRate.toString(),
+        calculatedAmount.toString(),
+        updatedTask.dueDate,
+        updatedTask.artifacts,
+      ]];
+
+      const range = `Tasks!A${taskRowIndex}:R${taskRowIndex}`;
+      await this.sheetsService.updateSheetData(range, values);
+
+      // Log activity
+      await this.logActivity(
+        'task_updated',
+        `Task "${updatedTask.taskName}" updated`,
+        taskId,
+        updatedTask.taskName,
+        'System'
+      );
+
+      const updatedTaskData: Task = {
+        ...updatedTask,
+        id: taskId,
+        actualHours: updatedTask.actualHours,
+        calculatedAmount: calculatedAmount
+      };
+
+      console.log(`DataService: Successfully updated task ${taskId}`);
+      return updatedTaskData;
+    } catch (error) {
+      console.error('DataService: Error updating task:', error);
+      throw new Error(`Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async updateTimeEntry(timeEntryId: string, updatedTimeEntry: Omit<TimeEntry, 'id' | 'duration'>): Promise<TimeEntry> {
+    try {
+      console.log(`DataService: Updating time entry ${timeEntryId}`);
+      
+      // Validate time entry data
+      this.validateTimeEntryData(updatedTimeEntry);
+      
+      // Get all time entries to find the row number
+      const response = await this.sheetsService.getSheetData('TimeEntries!A:I');
+      
+      if (!response.values || response.values.length === 0) {
+        throw new Error('No time entries found in sheet');
+      }
+
+      // Find the time entry's row
+      let timeEntryRowIndex = -1;
+      for (let i = 1; i < response.values.length; i++) {
+        if (response.values[i][0] === timeEntryId) {
+          timeEntryRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+          break;
+        }
+      }
+
+      if (timeEntryRowIndex === -1) {
+        throw new Error(`Time entry ${timeEntryId} not found in TimeEntries sheet`);
+      }
+
+      // Calculate duration
+      const duration = this.sheetsService.calculateDuration(updatedTimeEntry.startTime, updatedTimeEntry.endTime);
+
+      // Update the entire row
+      const values = [[
+        timeEntryId, // Keep the same ID
+        updatedTimeEntry.projectId,
+        updatedTimeEntry.taskId,
+        updatedTimeEntry.date,
+        updatedTimeEntry.startTime,
+        updatedTimeEntry.endTime,
+        duration.toString(),
+        updatedTimeEntry.description,
+        updatedTimeEntry.userName,
+      ]];
+
+      const range = `TimeEntries!A${timeEntryRowIndex}:I${timeEntryRowIndex}`;
+      await this.sheetsService.updateSheetData(range, values);
+
+      // Log activity
+      await this.logActivity(
+        'time_logged',
+        `Time entry updated: ${duration} hours`,
+        timeEntryId,
+        updatedTimeEntry.description || 'Time Entry',
+        updatedTimeEntry.userName
+      );
+
+      const updatedTimeEntryData: TimeEntry = {
+        ...updatedTimeEntry,
+        id: timeEntryId,
+        duration: duration
+      };
+
+      console.log(`DataService: Successfully updated time entry ${timeEntryId}`);
+      return updatedTimeEntryData;
+    } catch (error) {
+      console.error('DataService: Error updating time entry:', error);
+      throw new Error(`Failed to update time entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Dashboard statistics
   async getDashboardStats(): Promise<DashboardStats> {
     console.log('DataService: Getting dashboard stats...');
