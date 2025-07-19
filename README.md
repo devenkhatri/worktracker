@@ -13,6 +13,11 @@ A comprehensive work tracking application built with Next.js that integrates wit
 - **User Authentication**: Secure login system with session management and last login tracking
 - **Activity Tracking**: Comprehensive audit trail of all system activities and changes
 - **Export Functionality**: Export data in CSV or JSON formats with filtering options
+- **Client & Invoice Management**: Complete invoicing system with client portal access
+- **Expense Tracking**: Track and categorize project expenses with approval workflows
+- **Payment Management**: Record payments and automatically update invoice balances
+- **Financial Reporting**: Comprehensive financial reports and analytics
+- **Invoice Preview & PDF**: Generate professional invoices with preview and PDF export
 - **Currency Support**: Full Indian Rupee (INR) support with proper formatting
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 
@@ -27,6 +32,28 @@ A comprehensive work tracking application built with Next.js that integrates wit
 - **Authentication**: Session-based with HTTP-only cookies
 - **Icons**: Lucide React
 - **Currency**: Indian Rupee (INR) formatting and calculations
+
+## New Features (Latest Update)
+
+### **Client & Invoice Management System**
+- **Client Management**: Complete client database with contact information, payment terms, and billing rates
+- **Invoice Generation**: Automatic invoice creation from unbilled time entries with tax calculations
+- **Invoice Preview & PDF**: Professional invoice preview with PDF export functionality
+- **Smart Billing**: Tracks billed vs unbilled hours, prevents double billing
+- **Payment Tracking**: Record payments and automatically update invoice balances
+- **Client Portal**: Dedicated client access to view project progress and invoices
+
+### **Expense Management**
+- **Expense Tracking**: Categorize and track project expenses with receipt management
+- **Approval Workflow**: Expense approval process with status tracking
+- **Billable Expenses**: Mark expenses as billable to clients for invoice inclusion
+
+### **Enhanced Financial Reporting**
+- **Revenue Analytics**: Track revenue by client, project, and time period
+- **Outstanding Balances**: Monitor unpaid invoices and payment status
+- **Expense Analysis**: Categorized expense reporting and analysis
+- **Monthly Trends**: Revenue and expense trends over time
+- **Profitability Reports**: Project and client profitability analysis
 
 ## Google Sheets Setup
 

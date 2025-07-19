@@ -897,6 +897,603 @@ export class DataService {
     }
   }
 
+  // Client Management Methods
+  async getClients(): Promise<Client[]> {
+    try {
+      console.log('DataService: Getting clients...');
+      const response = await this.sheetsService.getSheetData('Clients!A:L');
+      
+      if (!response.values || response.values.length <= 1) {
+        console.log('DataService: No clients found');
+        return [];
+      }
+
+      const clients = response.values.slice(1).map((row): Client => ({
+        id: row[0] || '',
+        clientName: row[1] || '',
+        contactEmail: row[2] || '',
+        contactPhone: row[3] || '',
+        address: row[4] || '',
+        companyName: row[5] || '',
+        taxId: row[6] || '',
+        paymentTerms: parseInt(row[7]) || 30,
+        hourlyRate: parseFloat(row[8]) || 0,
+        status: (row[9] as Client['status']) || 'Active',
+        createdDate: row[10] || '',
+        notes: row[11] || '',
+      }));
+
+      console.log(`DataService: Found ${clients.length} clients`);
+      return clients;
+    } catch (error) {
+      console.error('DataService: Error getting clients:', error);
+      throw new Error(`Failed to get clients: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async addClient(client: Omit<Client, 'id' | 'createdDate'>): Promise<Client> {
+    try {
+      console.log('DataService: Adding client...');
+      
+      const id = this.sheetsService.generateClientId();
+      const createdDate = new Date().toISOString().split('T')[0];
+      
+      const values = [[
+        id,
+        client.clientName,
+        client.contactEmail,
+        client.contactPhone,
+        client.address,
+        client.companyName,
+        client.taxId,
+        client.paymentTerms.toString(),
+        client.hourlyRate.toString(),
+        client.status,
+        createdDate,
+        client.notes,
+      ]];
+
+      await this.sheetsService.appendSheetData('Clients!A:L', values);
+      
+      await this.logActivity(
+        'client_created',
+        `Client "${client.clientName}" created`,
+        id,
+        client.clientName,
+        'System'
+      );
+
+      const newClient: Client = {
+        ...client,
+        id,
+        createdDate,
+      };
+
+      console.log('DataService: Client added successfully');
+      return newClient;
+    } catch (error) {
+      console.error('DataService: Error adding client:', error);
+      throw new Error(`Failed to add client: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Invoice Management Methods
+  async getInvoices(): Promise<Invoice[]> {
+    try {
+      console.log('DataService: Getting invoices...');
+      const response = await this.sheetsService.getSheetData('Invoices!A:P');
+      
+      if (!response.values || response.values.length <= 1) {
+        console.log('DataService: No invoices found');
+        return [];
+      }
+
+      const invoices = response.values.slice(1).map((row): Invoice => ({
+        id: row[0] || '',
+        invoiceNumber: row[1] || '',
+        clientId: row[2] || '',
+        projectId: row[3] || '',
+        issueDate: row[4] || '',
+        dueDate: row[5] || '',
+        status: (row[6] as Invoice['status']) || 'Draft',
+        subtotal: parseFloat(row[7]) || 0,
+        taxRate: parseFloat(row[8]) || 0,
+        taxAmount: parseFloat(row[9]) || 0,
+        totalAmount: parseFloat(row[10]) || 0,
+        paidAmount: parseFloat(row[11]) || 0,
+        balanceAmount: parseFloat(row[12]) || 0,
+        paymentDate: row[13] || undefined,
+        notes: row[14] || '',
+        createdBy: row[15] || '',
+        createdDate: row[16] || '',
+      }));
+
+      console.log(`DataService: Found ${invoices.length} invoices`);
+      return invoices;
+    } catch (error) {
+      console.error('DataService: Error getting invoices:', error);
+      throw new Error(`Failed to get invoices: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getInvoicePreview(projectId: string, clientId: string): Promise<{
+    project: Project;
+    client: Client;
+    timeEntries: TimeEntry[];
+    subtotal: number;
+    taxRate: number;
+    taxAmount: number;
+    totalAmount: number;
+    invoiceNumber: string;
+    issueDate: string;
+    dueDate: string;
+  }> {
+    try {
+      console.log(`DataService: Getting invoice preview for project ${projectId}`);
+      
+      // Get time entries for the project
+      const timeEntries = await this.getTimeEntriesForProject(projectId);
+      const project = await this.getProjectById(projectId);
+      const client = await this.getClientById(clientId);
+      
+      if (!project) throw new Error('Project not found');
+      if (!client) throw new Error('Client not found');
+      
+      // Calculate invoice totals
+      const subtotal = timeEntries.reduce((sum, entry) => sum + (entry.duration * project.perHourRate), 0);
+      const taxRate = 0.18; // 18% GST (configurable)
+      const taxAmount = subtotal * taxRate;
+      const totalAmount = subtotal + taxAmount;
+      
+      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const issueDate = new Date().toISOString().split('T')[0];
+      const dueDate = new Date(Date.now() + (client.paymentTerms * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      
+      return {
+        project,
+        client,
+        timeEntries,
+        subtotal,
+        taxRate,
+        taxAmount,
+        totalAmount,
+        invoiceNumber,
+        issueDate,
+        dueDate,
+      };
+    } catch (error) {
+      console.error('DataService: Error getting invoice preview:', error);
+      throw new Error(`Failed to get invoice preview: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async generateInvoice(projectId: string, clientId: string): Promise<Invoice> {
+    try {
+      console.log(`DataService: Generating invoice for project ${projectId}`);
+      
+      // Get time entries for the project
+      const timeEntries = await this.getTimeEntriesForProject(projectId);
+      const project = await this.getProjectById(projectId);
+      const client = await this.getClientById(clientId);
+      const tasks = await this.getTasks();
+      
+      if (!project) throw new Error('Project not found');
+      if (!client) throw new Error('Client not found');
+      
+      // Get project tasks
+      const projectTasks = tasks.filter(task => task.projectId === projectId);
+      
+      // Calculate unbilled hours for each task
+      const taskBillingData: { [taskId: string]: { unbilledHours: number, totalHours: number } } = {};
+      
+      projectTasks.forEach(task => {
+        const taskTimeEntries = timeEntries.filter(te => te.taskId === task.id);
+        const totalHours = taskTimeEntries.reduce((sum, entry) => sum + entry.duration, 0);
+        const unbilledHours = Math.max(0, totalHours - task.billedHours);
+        
+        taskBillingData[task.id] = {
+          unbilledHours,
+          totalHours
+        };
+      });
+      
+      // Calculate invoice totals based on unbilled hours only
+      const totalUnbilledHours = Object.values(taskBillingData).reduce((sum, data) => sum + data.unbilledHours, 0);
+      const subtotal = totalUnbilledHours * project.perHourRate;
+      const taxRate = 0.18; // 18% GST (configurable)
+      const taxAmount = subtotal * taxRate;
+      const totalAmount = subtotal + taxAmount;
+      
+      if (totalUnbilledHours === 0) {
+        throw new Error('No unbilled hours found for this project. All hours have already been invoiced.');
+      }
+      
+      const id = this.sheetsService.generateInvoiceId();
+      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const issueDate = new Date().toISOString().split('T')[0];
+      const dueDate = new Date(Date.now() + (client.paymentTerms * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const createdDate = new Date().toISOString();
+      
+      const invoice: Invoice = {
+        id,
+        invoiceNumber,
+        clientId,
+        projectId,
+        issueDate,
+        dueDate,
+        status: 'Draft',
+        subtotal,
+        taxRate,
+        taxAmount,
+        totalAmount,
+        paidAmount: 0,
+        balanceAmount: totalAmount,
+        notes: `Invoice for project: ${project.projectName} (${totalUnbilledHours.toFixed(2)} unbilled hours)`,
+        createdBy: 'System',
+        createdDate,
+      };
+      
+      const values = [[
+        id,
+        invoiceNumber,
+        clientId,
+        projectId,
+        issueDate,
+        dueDate,
+        'Draft',
+        subtotal.toString(),
+        taxRate.toString(),
+        taxAmount.toString(),
+        totalAmount.toString(),
+        '0',
+        totalAmount.toString(),
+        '',
+        invoice.notes,
+        'System',
+        createdDate,
+      ]];
+
+      await this.sheetsService.appendSheetData('Invoices!A:Q', values);
+      
+      // Update billed hours for each task
+      await this.updateTaskBilledHours(projectTasks, taskBillingData);
+      
+      await this.logActivity(
+        'invoice_created',
+        `Invoice ${invoiceNumber} generated for project "${project.projectName}" (${totalUnbilledHours.toFixed(2)} hours billed)`,
+        id,
+        invoiceNumber,
+        'System'
+      );
+
+      console.log('DataService: Invoice generated successfully');
+      return invoice;
+    } catch (error) {
+      console.error('DataService: Error generating invoice:', error);
+      throw new Error(`Failed to generate invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async updateTaskBilledHours(tasks: Task[], billingData: { [taskId: string]: { unbilledHours: number, totalHours: number } }): Promise<void> {
+    try {
+      console.log('DataService: Updating task billed hours...');
+      
+      // Get all tasks to find row numbers
+      const response = await this.sheetsService.getSheetData('Tasks!A:R');
+      
+      if (!response.values || response.values.length === 0) {
+        throw new Error('No tasks found in sheet');
+      }
+
+      // Update each task's billed hours
+      for (const task of tasks) {
+        const billingInfo = billingData[task.id];
+        if (!billingInfo || billingInfo.unbilledHours === 0) continue;
+        
+        // Find the task's row
+        let taskRowIndex = -1;
+        let currentTaskData: any[] = [];
+        for (let i = 1; i < response.values.length; i++) {
+          if (response.values[i][0] === task.id) {
+            taskRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+            currentTaskData = response.values[i];
+            break;
+          }
+        }
+
+        if (taskRowIndex === -1) {
+          console.warn(`Task ${task.id} not found in Tasks sheet`);
+          continue;
+        }
+
+        // Calculate new billed hours (current billed + unbilled hours being invoiced)
+        const currentBilledHours = parseFloat(currentTaskData[9]) || 0;
+        const newBilledHours = currentBilledHours + billingInfo.unbilledHours;
+        
+        // Update the task row with new billed hours
+        const values = [[
+          currentTaskData[0], // Task ID
+          currentTaskData[1], // Project ID
+          currentTaskData[2], // Task Name
+          currentTaskData[3], // Task Description
+          currentTaskData[4], // Assigned To
+          currentTaskData[5], // Priority
+          currentTaskData[6], // Status
+          currentTaskData[7], // Estimated Hours
+          currentTaskData[8], // Actual Hours
+          newBilledHours.toString(), // Billed Hours (updated)
+          currentTaskData[10], // Project Per Hour Rate
+          currentTaskData[11], // Task Per Hour Rate
+          (newBilledHours * parseFloat(currentTaskData[11] || '0')).toString(), // Calculated Amount (updated)
+          currentTaskData[13], // Due Date
+          currentTaskData[14], // Artifacts
+        ]];
+
+        const range = `Tasks!A${taskRowIndex}:R${taskRowIndex}`;
+        await this.sheetsService.updateSheetData(range, values);
+        
+        console.log(`Updated task ${task.id} billed hours from ${currentBilledHours} to ${newBilledHours}`);
+      }
+      
+      console.log('DataService: Task billed hours updated successfully');
+    } catch (error) {
+      console.error('DataService: Error updating task billed hours:', error);
+      // Don't throw error here as invoice was already created successfully
+    }
+  }
+
+  // Expense Management Methods
+  async getExpenses(): Promise<Expense[]> {
+    try {
+      console.log('DataService: Getting expenses...');
+      const response = await this.sheetsService.getSheetData('Expenses!A:P');
+      
+      if (!response.values || response.values.length <= 1) {
+        console.log('DataService: No expenses found');
+        return [];
+      }
+
+      const expenses = response.values.slice(1).map((row): Expense => ({
+        id: row[0] || '',
+        projectId: row[1] || '',
+        clientId: row[2] || '',
+        expenseDate: row[3] || '',
+        category: (row[4] as Expense['category']) || 'Other',
+        description: row[5] || '',
+        amount: parseFloat(row[6]) || 0,
+        receiptUrl: row[7] || undefined,
+        billable: row[8] === 'TRUE',
+        reimbursable: row[9] === 'TRUE',
+        status: (row[10] as Expense['status']) || 'Pending',
+        submittedBy: row[11] || '',
+        submittedDate: row[12] || '',
+        approvedBy: row[13] || undefined,
+        approvedDate: row[14] || undefined,
+        notes: row[15] || '',
+      }));
+
+      console.log(`DataService: Found ${expenses.length} expenses`);
+      return expenses;
+    } catch (error) {
+      console.error('DataService: Error getting expenses:', error);
+      throw new Error(`Failed to get expenses: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async addExpense(expense: Omit<Expense, 'id' | 'submittedDate'>): Promise<Expense> {
+    try {
+      console.log('DataService: Adding expense...');
+      
+      const id = this.sheetsService.generateExpenseId();
+      const submittedDate = new Date().toISOString();
+      
+      const values = [[
+        id,
+        expense.projectId,
+        expense.clientId,
+        expense.expenseDate,
+        expense.category,
+        expense.description,
+        expense.amount.toString(),
+        expense.receiptUrl || '',
+        expense.billable ? 'TRUE' : 'FALSE',
+        expense.reimbursable ? 'TRUE' : 'FALSE',
+        expense.status,
+        expense.submittedBy,
+        submittedDate,
+        expense.approvedBy || '',
+        expense.approvedDate || '',
+        expense.notes,
+      ]];
+
+      await this.sheetsService.appendSheetData('Expenses!A:P', values);
+      
+      await this.logActivity(
+        'expense_created',
+        `Expense "${expense.description}" added for ${expense.amount}`,
+        id,
+        expense.description,
+        expense.submittedBy
+      );
+
+      const newExpense: Expense = {
+        ...expense,
+        id,
+        submittedDate,
+      };
+
+      console.log('DataService: Expense added successfully');
+      return newExpense;
+    } catch (error) {
+      console.error('DataService: Error adding expense:', error);
+      throw new Error(`Failed to add expense: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Payment Management Methods
+  async getPayments(): Promise<Payment[]> {
+    try {
+      console.log('DataService: Getting payments...');
+      const response = await this.sheetsService.getSheetData('Payments!A:I');
+      
+      if (!response.values || response.values.length <= 1) {
+        console.log('DataService: No payments found');
+        return [];
+      }
+
+      const payments = response.values.slice(1).map((row): Payment => ({
+        id: row[0] || '',
+        invoiceId: row[1] || '',
+        paymentDate: row[2] || '',
+        amount: parseFloat(row[3]) || 0,
+        paymentMethod: (row[4] as Payment['paymentMethod']) || 'Other',
+        referenceNumber: row[5] || '',
+        notes: row[6] || '',
+        recordedBy: row[7] || '',
+        recordedDate: row[8] || '',
+      }));
+
+      console.log(`DataService: Found ${payments.length} payments`);
+      return payments;
+    } catch (error) {
+      console.error('DataService: Error getting payments:', error);
+      throw new Error(`Failed to get payments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async addPayment(payment: Omit<Payment, 'id' | 'recordedDate'>): Promise<Payment> {
+    try {
+      console.log('DataService: Adding payment...');
+      
+      const id = this.sheetsService.generatePaymentId();
+      const recordedDate = new Date().toISOString();
+      
+      const values = [[
+        id,
+        payment.invoiceId,
+        payment.paymentDate,
+        payment.amount.toString(),
+        payment.paymentMethod,
+        payment.referenceNumber,
+        payment.notes,
+        payment.recordedBy,
+        recordedDate,
+      ]];
+
+      await this.sheetsService.appendSheetData('Payments!A:I', values);
+      
+      // Update invoice paid amount and balance
+      await this.updateInvoicePayment(payment.invoiceId, payment.amount);
+      
+      await this.logActivity(
+        'payment_recorded',
+        `Payment of ₹${payment.amount} recorded for invoice`,
+        id,
+        `Payment ${id}`,
+        payment.recordedBy
+      );
+
+      const newPayment: Payment = {
+        ...payment,
+        id,
+        recordedDate,
+      };
+
+      console.log('DataService: Payment added successfully');
+      return newPayment;
+    } catch (error) {
+      console.error('DataService: Error adding payment:', error);
+      throw new Error(`Failed to add payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async updateInvoicePayment(invoiceId: string, paymentAmount: number): Promise<void> {
+    try {
+      console.log(`DataService: Updating invoice ${invoiceId} with payment ${paymentAmount}`);
+      
+      // Get all invoices to find the row number
+      const response = await this.sheetsService.getSheetData('Invoices!A:Q');
+      
+      if (!response.values || response.values.length === 0) {
+        throw new Error('No invoices found in sheet');
+      }
+
+      // Find the invoice's row
+      let invoiceRowIndex = -1;
+      let currentInvoiceData: any[] = [];
+      for (let i = 1; i < response.values.length; i++) {
+        if (response.values[i][0] === invoiceId) {
+          invoiceRowIndex = i + 1; // +1 because sheet rows are 1-indexed
+          currentInvoiceData = response.values[i];
+          break;
+        }
+      }
+
+      if (invoiceRowIndex === -1) {
+        throw new Error(`Invoice ${invoiceId} not found in Invoices sheet`);
+      }
+
+      // Calculate new paid amount and balance
+      const currentPaidAmount = parseFloat(currentInvoiceData[11]) || 0;
+      const totalAmount = parseFloat(currentInvoiceData[10]) || 0;
+      const newPaidAmount = currentPaidAmount + paymentAmount;
+      const newBalanceAmount = totalAmount - newPaidAmount;
+      
+      // Determine new status
+      let newStatus = currentInvoiceData[6];
+      if (newBalanceAmount <= 0) {
+        newStatus = 'Paid';
+      } else if (newPaidAmount > 0 && currentInvoiceData[6] === 'Sent') {
+        newStatus = 'Sent'; // Keep as sent if partially paid
+      }
+
+      // Update the invoice row
+      const values = [[
+        currentInvoiceData[0], // Invoice ID
+        currentInvoiceData[1], // Invoice Number
+        currentInvoiceData[2], // Client ID
+        currentInvoiceData[3], // Project ID
+        currentInvoiceData[4], // Issue Date
+        currentInvoiceData[5], // Due Date
+        newStatus, // Status
+        currentInvoiceData[7], // Subtotal
+        currentInvoiceData[8], // Tax Rate
+        currentInvoiceData[9], // Tax Amount
+        currentInvoiceData[10], // Total Amount
+        newPaidAmount.toString(), // Paid Amount
+        newBalanceAmount.toString(), // Balance Amount
+        newBalanceAmount <= 0 ? new Date().toISOString().split('T')[0] : currentInvoiceData[13], // Payment Date
+        currentInvoiceData[14], // Notes
+        currentInvoiceData[15], // Created By
+        currentInvoiceData[16], // Created Date
+      ]];
+
+      const range = `Invoices!A${invoiceRowIndex}:Q${invoiceRowIndex}`;
+      await this.sheetsService.updateSheetData(range, values);
+
+      console.log(`DataService: Invoice ${invoiceId} updated with payment`);
+    } catch (error) {
+      console.error('DataService: Error updating invoice payment:', error);
+      throw new Error(`Failed to update invoice payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Helper methods
+  private async getTimeEntriesForProject(projectId: string): Promise<TimeEntry[]> {
+    const allTimeEntries = await this.getTimeEntries();
+    return allTimeEntries.filter(entry => entry.projectId === projectId);
+  }
+
+  private async getProjectById(projectId: string): Promise<Project | null> {
+    const projects = await this.getProjects();
+    return projects.find(p => p.id === projectId) || null;
+  }
+
+  private async getClientById(clientId: string): Promise<Client | null> {
+    const clients = await this.getClients();
+    return clients.find(c => c.id === clientId) || null;
+  }
+
   // Dashboard statistics
   async getDashboardStats(): Promise<DashboardStats> {
     console.log('DataService: Getting dashboard stats...');

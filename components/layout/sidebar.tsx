@@ -18,7 +18,11 @@ import {
   Download,
   LogOut,
   User,
-  Kanban
+  Kanban,
+  Users,
+  FileText,
+  Receipt,
+  CreditCard
 } from 'lucide-react';
 
 const navigation = [
@@ -27,6 +31,11 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: FolderOpen },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Time Tracking', href: '/time-tracking', icon: Clock },
+  { name: 'Clients', href: '/clients', icon: Users },
+  { name: 'Invoices', href: '/invoices', icon: FileText },
+  { name: 'Expenses', href: '/expenses', icon: Receipt },
+  { name: 'Payments', href: '/payments', icon: CreditCard },
+  { name: 'Client Portal', href: '/client-portal', icon: User },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Export', href: '/export', icon: Download },
   { name: 'Profile', href: '/profile', icon: User },

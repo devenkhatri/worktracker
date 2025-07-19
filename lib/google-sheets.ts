@@ -478,6 +478,32 @@ export class GoogleSheetsService {
     return `ACT-${timestamp}-${random}`;
   }
 
+  generateClientId(): string {
+    const year = new Date().getFullYear();
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `CLIENT-${year}-${timestamp}-${random}`;
+  }
+
+  generateInvoiceId(): string {
+    const year = new Date().getFullYear();
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `INV-${year}-${timestamp}-${random}`;
+  }
+
+  generateExpenseId(): string {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `EXP-${timestamp}-${random}`;
+  }
+
+  generatePaymentId(): string {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `PAY-${timestamp}-${random}`;
+  }
+
   async verifyConfiguration(): Promise<{ success: boolean; message: string; details?: any }> {
     try {
       // Test basic API access

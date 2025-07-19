@@ -90,3 +90,92 @@ export interface GoogleSheetsUpdateResponse {
   updatedColumns: number;
   updatedRows: number;
 }
+
+// Client & Invoice Management Types
+export interface Client {
+  id: string;
+  clientName: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  companyName: string;
+  taxId: string;
+  paymentTerms: number; // days
+  hourlyRate: number;
+  status: 'Active' | 'Inactive';
+  createdDate: string;
+  notes: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  clientId: string;
+  projectId: string;
+  issueDate: string;
+  dueDate: string;
+  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  paymentDate?: string;
+  notes: string;
+  createdBy: string;
+  createdDate: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  taskId?: string;
+  timeEntryIds: string[]; // JSON array of time entry IDs
+}
+
+export interface Expense {
+  id: string;
+  projectId: string;
+  clientId: string;
+  expenseDate: string;
+  category: 'Travel' | 'Materials' | 'Software' | 'Equipment' | 'Other';
+  description: string;
+  amount: number;
+  receiptUrl?: string;
+  billable: boolean;
+  reimbursable: boolean;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Reimbursed';
+  submittedBy: string;
+  submittedDate: string;
+  approvedBy?: string;
+  approvedDate?: string;
+  notes: string;
+}
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  paymentDate: string;
+  amount: number;
+  paymentMethod: 'Cash' | 'Check' | 'Bank Transfer' | 'Credit Card' | 'PayPal' | 'Other';
+  referenceNumber: string;
+  notes: string;
+  recordedBy: string;
+  recordedDate: string;
+}
+
+export interface ClientPortalAccess {
+  id: string;
+  clientId: string;
+  accessToken: string;
+  expiryDate: string;
+  permissions: string[]; // JSON array of permissions
+  isActive: boolean;
+  createdDate: string;
+  lastAccessDate?: string;
+}
