@@ -20,7 +20,7 @@ export interface Task {
   taskName: string;
   taskDescription: string;
   assignedTo: string;
-  priority: 'High' | 'Medium' | 'Low';
+  priority: 'High' | 'Medium' | 'Low' | 'Urgent';
   status: 'To Do' | 'In Progress' | 'Review' | 'Completed';
   estimatedHours: number;
   actualHours: number;

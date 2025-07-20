@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { LoadingButton } from '@/components/ui/loading-button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Task, Project } from '@/lib/types';
 
 interface TaskFormProps {
-  onSubmit: (task: Omit<Task, 'id' | 'actualHours' | 'billedHours'>) => Promise<void>;
+  onSubmit: (task: Omit<Task, 'id' | 'actualHours' | 'calculatedAmount'>) => Promise<void>;
   onCancel: () => void;
   initialData?: Partial<Task>;
   isEditing?: boolean;
@@ -23,16 +23,31 @@ export function TaskForm({ onSubmit, onCancel, initialData, isEditing = false, p
     taskName: initialData?.taskName || '',
     projectId: initialData?.projectId || '',
     taskDescription: initialData?.taskDescription || '',
+    assignedTo: initialData?.assignedTo || '',
     priority: initialData?.priority || 'Medium' as Task['priority'],
     status: initialData?.status || 'To Do' as Task['status'],
     estimatedHours: initialData?.estimatedHours || 0,
-    dueDate: initialData?.dueDate || '',
-    assignedTo: initialData?.assignedTo || '',
-    artifacts: initialData?.artifacts || '',
+    billedHours: initialData?.billedHours || 0,
     projectPerHourRate: initialData?.projectPerHourRate || 0,
     taskPerHourRate: initialData?.taskPerHourRate || 0,
     calculatedAmount: initialData?.calculatedAmount || 0,
+    dueDate: initialData?.dueDate || '',
+    artifacts: initialData?.artifacts || '',
   });
+
+  // Update form data when project changes to set the project per hour rate
+  useEffect(() => {
+    if (formData.projectId) {
+      const selectedProject = projects.find(p => p.id === formData.projectId);
+      if (selectedProject) {
+        setFormData(prev => ({
+          ...prev,
+          projectPerHourRate: selectedProject.perHourRate,
+          taskPerHourRate: prev.taskPerHourRate || selectedProject.perHourRate,
+        }));
+      }
+    }
+  }, [formData.projectId, projects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +109,16 @@ export function TaskForm({ onSubmit, onCancel, initialData, isEditing = false, p
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <Label htmlFor="assignedTo">Assigned To</Label>
+              <Input
+                id="assignedTo"
+                value={formData.assignedTo}
+                onChange={(e) => handleInputChange('assignedTo', e.target.value)}
+                placeholder="Enter assignee name"
+                required
+              />
+            </div>
+            <div>
               <Label htmlFor="priority">Priority</Label>
               <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
                 <SelectTrigger>
@@ -107,6 +132,9 @@ export function TaskForm({ onSubmit, onCancel, initialData, isEditing = false, p
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="status">Status</Label>
               <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
@@ -120,6 +148,15 @@ export function TaskForm({ onSubmit, onCancel, initialData, isEditing = false, p
                   <SelectItem value="Completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label htmlFor="dueDate">Due Date</Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => handleInputChange('dueDate', e.target.value)}
+              />
             </div>
           </div>
 
@@ -136,35 +173,52 @@ export function TaskForm({ onSubmit, onCancel, initialData, isEditing = false, p
               />
             </div>
             <div>
-              <Label htmlFor="dueDate">Due Date</Label>
+              <Label htmlFor="billedHours">Billed Hours</Label>
               <Input
-                id="dueDate"
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                id="billedHours"
+                type="number"
+                value={formData.billedHours}
+                onChange={(e) => handleInputChange('billedHours', parseFloat(e.target.value) || 0)}
+                min="0"
+                step="0.5"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="assignedTo">Assigned To</Label>
+              <Label htmlFor="projectPerHourRate">Project Rate (₹/hour)</Label>
               <Input
-                id="assignedTo"
-                value={formData.assignedTo}
-                onChange={(e) => handleInputChange('assignedTo', e.target.value)}
-                placeholder="Enter assignee name"
+                id="projectPerHourRate"
+                type="number"
+                value={formData.projectPerHourRate}
+                onChange={(e) => handleInputChange('projectPerHourRate', parseFloat(e.target.value) || 0)}
+                min="0"
+                step="0.01"
+                readOnly
               />
             </div>
             <div>
-              <Label htmlFor="artifacts">Artifacts/Deliverables</Label>
+              <Label htmlFor="taskPerHourRate">Task Rate (₹/hour)</Label>
               <Input
-                id="artifacts"
-                value={formData.artifacts}
-                onChange={(e) => handleInputChange('artifacts', e.target.value)}
-                placeholder="Describe deliverables, outputs, or artifacts"
+                id="taskPerHourRate"
+                type="number"
+                value={formData.taskPerHourRate}
+                onChange={(e) => handleInputChange('taskPerHourRate', parseFloat(e.target.value) || 0)}
+                min="0"
+                step="0.01"
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="artifacts">Artifacts/Deliverables</Label>
+            <Input
+              id="artifacts"
+              value={formData.artifacts}
+              onChange={(e) => handleInputChange('artifacts', e.target.value)}
+              placeholder="Describe deliverables, outputs, or artifacts"
+            />
           </div>
 
           {selectedProject && (

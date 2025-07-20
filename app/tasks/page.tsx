@@ -122,7 +122,7 @@ export default function TasksPage() {
     }
   };
 
-    const handleCreateTask = async (taskData: Omit<Task, 'id' | 'actualHours' | 'billedHours'>) => {
+    const handleCreateTask = async (taskData: Omit<Task, 'id' | 'actualHours' | 'calculatedAmount'>) => {
     if (editingTask) {
       console.log('Updating task with data:', taskData);
       const response = await fetch(`/api/tasks/${editingTask.id}`, {

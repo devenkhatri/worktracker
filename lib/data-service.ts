@@ -78,8 +78,8 @@ export class DataService {
       errors.push('Task name is required');
     }
 
-    if (!['High', 'Medium', 'Low'].includes(task.priority)) {
-      errors.push('Priority must be High, Medium, or Low');
+    if (!['High', 'Medium', 'Low', 'Urgent'].includes(task.priority)) {
+      errors.push('Priority must be High, Medium, Low, or Urgent');
     }
 
     if (!['To Do', 'In Progress', 'Review', 'Completed'].includes(task.status)) {
