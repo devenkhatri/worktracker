@@ -64,7 +64,7 @@ export interface GoogleSheetsResponse {
 export interface Activity {
   id: string;
   timestamp: string;
-  type: 'project_created' | 'project_updated' | 'project_completed' | 'task_created' | 'task_updated' | 'task_completed' | 'time_logged' | 'project_status_changed' | 'task_status_changed';
+  type: 'project_created' | 'project_updated' | 'project_completed' | 'task_created' | 'task_updated' | 'task_completed' | 'time_logged' | 'project_status_changed' | 'task_status_changed' | 'client_created' | 'client_updated' | 'invoice_created' | 'invoice_updated' | 'payment_received' | 'payment_recorded' | 'expense_created' | 'expense_submitted' | 'expense_approved';
   description: string;
   entityId: string; // ID of the project, task, or time entry
   entityName: string; // Name of the project or task

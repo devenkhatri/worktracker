@@ -12,6 +12,7 @@ import { InvoicePreview } from '@/components/invoice-preview';
 import { Invoice, Project, Client } from '@/lib/types';
 import { Plus, Loader2, AlertCircle, FileText, Download, Eye } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { generateInvoiceHTML } from '@/lib/pdf-generator';
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -209,7 +210,17 @@ export default function InvoicesPage() {
       
       // Generate and download PDF
       const htmlContent = generateInvoiceHTML(pdfData);
-      PDFGenerator.downloadHTMLAsPDF(htmlContent, `Invoice-${invoice.invoiceNumber}.pdf`);
+      
+      // Create a blob and download the PDF
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Invoice-${invoice.invoiceNumber}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
     } catch (err) {
       console.error('Error downloading PDF:', err);
@@ -217,74 +228,7 @@ export default function InvoicesPage() {
     }
   };
 
-  const generateInvoiceHTML = (data: any) => {
-    // This is a simplified version - you can enhance this
-    const { invoice, client, project, timeEntries } = data;
-    
-    const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('en-IN', { 
-        style: 'currency', 
-        currency: 'INR' 
-      }).format(amount);
-    };
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Invoice ${invoice.invoiceNumber}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .invoice-details { margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-          .total { font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>INVOICE</h1>
-          <h2>${invoice.invoiceNumber}</h2>
-        </div>
-        <div class="invoice-details">
-          <p><strong>Client:</strong> ${client.clientName}</p>
-          <p><strong>Project:</strong> ${project.projectName}</p>
-          <p><strong>Issue Date:</strong> ${invoice.issueDate}</p>
-          <p><strong>Due Date:</strong> ${invoice.dueDate}</p>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Hours</th>
-              <th>Rate</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${timeEntries.map((entry: any) => `
-              <tr>
-                <td>${entry.date}</td>
-                <td>${entry.description || 'Time entry'}</td>
-                <td>${entry.duration.toFixed(2)}</td>
-                <td>${formatCurrency(project.perHourRate)}</td>
-                <td>${formatCurrency(entry.duration * project.perHourRate)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <div class="total">
-          <p>Subtotal: ${formatCurrency(invoice.subtotal)}</p>
-          <p>Tax: ${formatCurrency(invoice.taxAmount)}</p>
-          <p>Total: ${formatCurrency(invoice.totalAmount)}</p>
-        </div>
-      </body>
-      </html>
-    `;
-  };
 
   const getProjectName = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);

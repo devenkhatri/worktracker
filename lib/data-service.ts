@@ -1,4 +1,4 @@
-import { Project, Task, TimeEntry, DashboardStats, Activity, User } from './types';
+import { Project, Task, TimeEntry, DashboardStats, Activity, User, Client, Invoice, Expense, Payment } from './types';
 import GoogleSheetsService from './google-sheets';
 
 export class DataService {
