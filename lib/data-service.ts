@@ -1045,7 +1045,7 @@ export class DataService {
       const taxAmount = subtotal * taxRate;
       const totalAmount = subtotal + taxAmount;
       
-      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const invoiceNumber = this.sheetsService.generateInvoiceNumber();
       const issueDate = new Date().toISOString().split('T')[0];
       const dueDate = new Date(Date.now() + (client.paymentTerms * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
       
@@ -1109,7 +1109,7 @@ export class DataService {
       }
       
       const id = this.sheetsService.generateInvoiceId();
-      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const invoiceNumber = this.sheetsService.generateInvoiceNumber();
       const issueDate = new Date().toISOString().split('T')[0];
       const dueDate = new Date(Date.now() + (client.paymentTerms * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
       const createdDate = new Date().toISOString();

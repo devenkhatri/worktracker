@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     
     const previewInvoice = {
       id: 'preview',
-      invoiceNumber: `PREVIEW-${Date.now()}`,
+      invoiceNumber: `PREVIEW-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
       clientId,
       projectId,
       issueDate: new Date().toISOString().split('T')[0],

@@ -1,7 +1,9 @@
 import { GoogleSheetsResponse, GoogleSheetsUpdateResponse } from './types';
+import { SequentialIdManager } from './sequential-id-manager';
 import { createSign } from 'crypto';
 
 const GOOGLE_SHEETS_API_URL = 'https://sheets.googleapis.com/v4/spreadsheets';
+const GOOGLE_AUTH_URL = 'https://oauth2.googleapis.com/token';
 
 export class GoogleSheetsService {
   private spreadsheetId: string;
@@ -11,6 +13,7 @@ export class GoogleSheetsService {
   private authMode: 'service_account' | 'api_key';
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
+  private idManager: SequentialIdManager;
 
   constructor(spreadsheetId: string, credentials?: { email?: string; privateKey?: string; apiKey?: string }) {
     if (!spreadsheetId) {
@@ -18,19 +21,96 @@ export class GoogleSheetsService {
     }
     
     this.spreadsheetId = spreadsheetId;
+    this.idManager = new SequentialIdManager();
     
-    // Determine authentication mode based on available credentials
     if (credentials?.email && credentials?.privateKey) {
-      this.authMode = 'service_account';
       this.serviceAccountEmail = credentials.email;
       this.privateKey = this.cleanPrivateKey(credentials.privateKey);
+      this.authMode = 'service_account';
       console.log('Using Service Account authentication');
     } else if (credentials?.apiKey) {
-      this.authMode = 'api_key';
       this.apiKey = credentials.apiKey;
-      console.warn('Using API key authentication - write operations will be limited. Consider upgrading to Service Account for full functionality.');
+      this.authMode = 'api_key';
+      console.log('Using API Key authentication');
     } else {
-      throw new Error('Either Service Account credentials (email + private key) or API key must be provided.');
+      throw new Error('No valid credentials provided. Please provide either service account credentials or API key.');
+    }
+
+    // Initialize the ID manager with current counts
+    this.initializeIdManager();
+  }
+
+  /**
+   * Initialize the ID manager with current record counts
+   */
+  private async initializeIdManager(): Promise<void> {
+    try {
+      const getCounts = async (): Promise<{ [key: string]: number }> => {
+        const counts: { [key: string]: number } = {};
+        
+        try {
+          // Get counts for each sheet
+          const projectsResponse = await this.getSheetData('Projects!A2:A');
+          counts.project = projectsResponse.values?.length || 0;
+        } catch (error) {
+          counts.project = 0;
+        }
+
+        try {
+          const tasksResponse = await this.getSheetData('Tasks!A2:A');
+          counts.task = tasksResponse.values?.length || 0;
+        } catch (error) {
+          counts.task = 0;
+        }
+
+        try {
+          const timeEntriesResponse = await this.getSheetData('TimeEntries!A2:A');
+          counts.timeEntry = timeEntriesResponse.values?.length || 0;
+        } catch (error) {
+          counts.timeEntry = 0;
+        }
+
+        try {
+          const activitiesResponse = await this.getSheetData('Activities!A2:A');
+          counts.activity = activitiesResponse.values?.length || 0;
+        } catch (error) {
+          counts.activity = 0;
+        }
+
+        try {
+          const clientsResponse = await this.getSheetData('Clients!A2:A');
+          counts.client = clientsResponse.values?.length || 0;
+        } catch (error) {
+          counts.client = 0;
+        }
+
+        try {
+          const invoicesResponse = await this.getSheetData('Invoices!A2:A');
+          counts.invoice = invoicesResponse.values?.length || 0;
+        } catch (error) {
+          counts.invoice = 0;
+        }
+
+        try {
+          const expensesResponse = await this.getSheetData('Expenses!A2:A');
+          counts.expense = expensesResponse.values?.length || 0;
+        } catch (error) {
+          counts.expense = 0;
+        }
+
+        try {
+          const paymentsResponse = await this.getSheetData('Payments!A2:A');
+          counts.payment = paymentsResponse.values?.length || 0;
+        } catch (error) {
+          counts.payment = 0;
+        }
+
+        return counts;
+      };
+
+      await this.idManager.initializeCounters(getCounts);
+    } catch (error) {
+      console.error('Error initializing ID manager:', error);
     }
   }
 
@@ -454,54 +534,39 @@ export class GoogleSheetsService {
   }
 
   generateProjectId(): string {
-    const year = new Date().getFullYear();
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `PROJ-${year}-${timestamp}-${random}`;
+    return this.idManager.generateId('project');
   }
 
   generateTaskId(): string {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `TASK-${timestamp}-${random}`;
+    return this.idManager.generateId('task');
   }
 
   generateTimeEntryId(): string {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `TIME-${timestamp}-${random}`;
+    return this.idManager.generateId('timeEntry');
   }
 
   generateActivityId(): string {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `ACT-${timestamp}-${random}`;
+    return this.idManager.generateId('activity');
   }
 
   generateClientId(): string {
-    const year = new Date().getFullYear();
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `CLIENT-${year}-${timestamp}-${random}`;
+    return this.idManager.generateId('client');
   }
 
   generateInvoiceId(): string {
-    const year = new Date().getFullYear();
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `INV-${year}-${timestamp}-${random}`;
+    return this.idManager.generateId('invoice');
   }
 
   generateExpenseId(): string {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `EXP-${timestamp}-${random}`;
+    return this.idManager.generateId('expense');
   }
 
   generatePaymentId(): string {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `PAY-${timestamp}-${random}`;
+    return this.idManager.generateId('payment');
+  }
+
+  generateInvoiceNumber(): string {
+    return this.idManager.generateInvoiceNumber();
   }
 
   async verifyConfiguration(): Promise<{ success: boolean; message: string; details?: any }> {
