@@ -2,21 +2,32 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/ui/loading-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Project } from '@/lib/types';
+import { Project, Client } from '@/lib/types';
+import { ClientSelector } from '@/components/client-selector';
 
 interface ProjectFormProps {
-  onSubmit: (project: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>) => void;
+  onSubmit: (project: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>) => Promise<void>;
   onCancel: () => void;
   initialData?: Partial<Project>;
   isEditing?: boolean;
+  clients: Client[];
+  onCreateClient: (client: Omit<Client, 'id' | 'createdDate'>) => Promise<Client>;
 }
 
-export function ProjectForm({ onSubmit, onCancel, initialData, isEditing = false }: ProjectFormProps) {
+export function ProjectForm({ 
+  onSubmit, 
+  onCancel, 
+  initialData, 
+  isEditing = false,
+  clients,
+  onCreateClient
+}: ProjectFormProps) {
   const [formData, setFormData] = useState({
     projectName: initialData?.projectName || '',
     clientName: initialData?.clientName || '',
@@ -30,9 +41,9 @@ export function ProjectForm({ onSubmit, onCancel, initialData, isEditing = false
     totalBilledHours: initialData?.totalBilledHours || 0,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSubmit(formData);
   };
 
   const handleInputChange = (field: string, value: string | number) => {
@@ -60,12 +71,13 @@ export function ProjectForm({ onSubmit, onCancel, initialData, isEditing = false
               />
             </div>
             <div>
-              <Label htmlFor="clientName">Client Name</Label>
-              <Input
-                id="clientName"
+              <Label htmlFor="clientName">Client</Label>
+              <ClientSelector
                 value={formData.clientName}
-                onChange={(e) => handleInputChange('clientName', e.target.value)}
-                required
+                onValueChange={(value) => handleInputChange('clientName', value)}
+                clients={clients}
+                onCreateClient={onCreateClient}
+                placeholder="Select a client"
               />
             </div>
           </div>
@@ -170,9 +182,13 @@ export function ProjectForm({ onSubmit, onCancel, initialData, isEditing = false
             <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">
+            <LoadingButton 
+              type="submit" 
+              className="w-full sm:w-auto"
+              loadingText={isEditing ? "Updating..." : "Creating..."}
+            >
               {isEditing ? 'Update Project' : 'Create Project'}
-            </Button>
+            </LoadingButton>
           </div>
         </form>
       </CardContent>

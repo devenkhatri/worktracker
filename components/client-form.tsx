@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/ui/loading-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Client } from '@/lib/types';
 
 interface ClientFormProps {
-  onSubmit: (client: Omit<Client, 'id' | 'createdDate'>) => void;
+  onSubmit: (client: Omit<Client, 'id' | 'createdDate'>) => Promise<void>;
   onCancel: () => void;
   initialData?: Partial<Client>;
   isEditing?: boolean;
@@ -30,9 +31,9 @@ export function ClientForm({ onSubmit, onCancel, initialData, isEditing = false 
     notes: initialData?.notes || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSubmit(formData);
   };
 
   const handleInputChange = (field: string, value: string | number) => {
@@ -160,9 +161,13 @@ export function ClientForm({ onSubmit, onCancel, initialData, isEditing = false 
             <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">
+            <LoadingButton 
+              type="submit" 
+              className="w-full sm:w-auto"
+              loadingText={isEditing ? "Updating..." : "Adding..."}
+            >
               {isEditing ? 'Update Client' : 'Add Client'}
-            </Button>
+            </LoadingButton>
           </div>
         </form>
       </CardContent>

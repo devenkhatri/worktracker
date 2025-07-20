@@ -6,13 +6,14 @@ import { DataTable } from '@/components/ui/data-table';
 import { ProjectForm } from '@/components/project-form';
 import { ConfigVerification } from '@/components/config-verification';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Project, Task } from '@/lib/types';
+import { Project, Task, Client } from '@/lib/types';
 import { Plus, Loader2, AlertCircle, Edit } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -23,23 +24,26 @@ export default function ProjectsPage() {
     const fetchData = async () => {
       try {
         console.log('Projects: Starting data fetch...');
-        const [projectsResponse, tasksResponse] = await Promise.all([
+        const [projectsResponse, tasksResponse, clientsResponse] = await Promise.all([
           fetch('/api/projects'),
-          fetch('/api/tasks')
+          fetch('/api/tasks'),
+          fetch('/api/clients')
         ]);
 
         console.log('Projects: Response statuses:', {
           projects: projectsResponse.status,
-          tasks: tasksResponse.status
+          tasks: tasksResponse.status,
+          clients: clientsResponse.status
         });
 
-        if (!projectsResponse.ok || !tasksResponse.ok) {
+        if (!projectsResponse.ok || !tasksResponse.ok || !clientsResponse.ok) {
           const projectsError = !projectsResponse.ok ? await projectsResponse.text() : null;
           const tasksError = !tasksResponse.ok ? await tasksResponse.text() : null;
-          console.error('Projects: API errors:', { projectsError, tasksError });
+          const clientsError = !clientsResponse.ok ? await clientsResponse.text() : null;
+          console.error('Projects: API errors:', { projectsError, tasksError, clientsError });
 
           // Check if it's a configuration error
-          const errorText = projectsError || tasksError || '';
+          const errorText = projectsError || tasksError || clientsError || '';
           if (errorText.includes('configuration') || errorText.includes('environment')) {
             setConfigValid(false);
             setError('Configuration issue detected. Please verify your Google Sheets setup.');
@@ -51,14 +55,17 @@ export default function ProjectsPage() {
 
         const projectsData = await projectsResponse.json();
         const tasksData = await tasksResponse.json();
+        const clientsData = await clientsResponse.json();
 
         console.log('Projects: Data received:', {
           projectsCount: projectsData.length,
-          tasksCount: tasksData.length
+          tasksCount: tasksData.length,
+          clientsCount: clientsData.length
         });
 
         setProjects(projectsData);
         setTasks(tasksData);
+        setClients(clientsData);
         setConfigValid(true);
         setError(null);
       } catch (err) {
@@ -84,22 +91,26 @@ export default function ProjectsPage() {
       const fetchData = async () => {
         try {
           console.log('Projects: Retrying data fetch after config fix...');
-          const [projectsResponse, tasksResponse] = await Promise.all([
+          const [projectsResponse, tasksResponse, clientsResponse] = await Promise.all([
             fetch('/api/projects'),
-            fetch('/api/tasks')
+            fetch('/api/tasks'),
+            fetch('/api/clients')
           ]);
 
-          if (!projectsResponse.ok || !tasksResponse.ok) {
+          if (!projectsResponse.ok || !tasksResponse.ok || !clientsResponse.ok) {
             const projectsError = !projectsResponse.ok ? await projectsResponse.text() : null;
             const tasksError = !tasksResponse.ok ? await tasksResponse.text() : null;
-            throw new Error(`Failed to fetch data: ${projectsError || tasksError}`);
+            const clientsError = !clientsResponse.ok ? await clientsResponse.text() : null;
+            throw new Error(`Failed to fetch data: ${projectsError || tasksError || clientsError}`);
           }
 
           const projectsData = await projectsResponse.json();
           const tasksData = await tasksResponse.json();
+          const clientsData = await clientsResponse.json();
 
           setProjects(projectsData);
           setTasks(tasksData);
+          setClients(clientsData);
           setError(null);
         } catch (err) {
           console.error('Error retrying projects fetch:', err);
@@ -112,70 +123,100 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleCreateProject = async (projectData: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>) => {
+  const handleCreateClient = async (clientData: Omit<Client, 'id' | 'createdDate'>): Promise<Client> => {
     try {
-      if (editingProject) {
-        console.log('Updating project with data:', projectData);
-        const response = await fetch(`/api/projects/${editingProject.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(projectData),
-        });
+      console.log('Creating client with data:', clientData);
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(clientData),
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Project update failed:', errorText);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Client creation failed:', errorText);
 
-          let errorMessage = 'Failed to update project';
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorText;
-          } catch {
-            errorMessage = errorText || 'Failed to update project';
-          }
-
-          throw new Error(errorMessage);
+        let errorMessage = 'Failed to create client';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || 'Failed to create client';
         }
 
-        const updatedProject = await response.json();
-        setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
-      } else {
-        console.log('Creating project with data:', projectData);
-        const response = await fetch('/api/projects', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(projectData),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Project creation failed:', errorText);
-
-          let errorMessage = 'Failed to create project';
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorText;
-          } catch {
-            errorMessage = errorText || 'Failed to create project';
-          }
-
-          throw new Error(errorMessage);
-        }
-
-        const newProject = await response.json();
-        setProjects(prev => [...prev, newProject]);
+        throw new Error(errorMessage);
       }
 
-      setShowForm(false);
-      setEditingProject(null);
+      const newClient = await response.json();
+      setClients(prev => [...prev, newClient]);
+      return newClient;
     } catch (err) {
-      console.error('Error saving project:', err);
-      setError(editingProject ? 'Failed to update project. Please try again.' : 'Failed to create project. Please try again.');
+      console.error('Error creating client:', err);
+      throw err;
     }
+  };
+
+  const handleCreateProject = async (projectData: Omit<Project, 'id' | 'totalActualHours' | 'totalAmount'>) => {
+    if (editingProject) {
+      console.log('Updating project with data:', projectData);
+      const response = await fetch(`/api/projects/${editingProject.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Project update failed:', errorText);
+
+        let errorMessage = 'Failed to update project';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || 'Failed to update project';
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const updatedProject = await response.json();
+      setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
+    } else {
+      console.log('Creating project with data:', projectData);
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Project creation failed:', errorText);
+
+        let errorMessage = 'Failed to create project';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || 'Failed to create project';
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const newProject = await response.json();
+      setProjects(prev => [...prev, newProject]);
+    }
+
+    setShowForm(false);
+    setEditingProject(null);
   };
 
   const handleEditProject = (project: Project) => {
@@ -310,6 +351,8 @@ export default function ProjectsPage() {
           onCancel={handleCancelEdit}
           initialData={editingProject || undefined}
           isEditing={!!editingProject}
+          clients={clients}
+          onCreateClient={handleCreateClient}
         />
       </div>
     );

@@ -92,47 +92,42 @@ export default function ClientsPage() {
   };
 
   const handleCreateClient = async (clientData: Omit<Client, 'id' | 'createdDate'>) => {
-    try {
-      if (editingClient) {
-        console.log('Updating client with data:', clientData);
-        // TODO: Implement client update API
-        setError('Client editing not yet implemented');
-        return;
-      } else {
-        console.log('Creating client with data:', clientData);
-        const response = await fetch('/api/clients', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(clientData),
-        });
+    if (editingClient) {
+      console.log('Updating client with data:', clientData);
+      // TODO: Implement client update API
+      setError('Client editing not yet implemented');
+      return;
+    } else {
+      console.log('Creating client with data:', clientData);
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(clientData),
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Client creation failed:', errorText);
-          
-          let errorMessage = 'Failed to create client';
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorText;
-          } catch {
-            errorMessage = errorText || 'Failed to create client';
-          }
-          
-          throw new Error(errorMessage);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Client creation failed:', errorText);
+        
+        let errorMessage = 'Failed to create client';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || 'Failed to create client';
         }
-
-        const newClient = await response.json();
-        setClients(prev => [...prev, newClient]);
+        
+        throw new Error(errorMessage);
       }
-      
-      setShowForm(false);
-      setEditingClient(null);
-    } catch (err) {
-      console.error('Error saving client:', err);
-      setError(editingClient ? 'Failed to update client. Please try again.' : 'Failed to create client. Please try again.');
+
+      const newClient = await response.json();
+      setClients(prev => [...prev, newClient]);
     }
+    
+    setShowForm(false);
+    setEditingClient(null);
   };
 
   const handleEditClient = (client: Client) => {

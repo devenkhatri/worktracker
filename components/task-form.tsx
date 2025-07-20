@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/ui/loading-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,45 +11,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Task, Project } from '@/lib/types';
 
 interface TaskFormProps {
-  onSubmit: (task: Omit<Task, 'id' | 'actualHours' | 'calculatedAmount'>) => void;
+  onSubmit: (task: Omit<Task, 'id' | 'actualHours' | 'billedHours'>) => Promise<void>;
   onCancel: () => void;
-  projects: Project[];
   initialData?: Partial<Task>;
   isEditing?: boolean;
+  projects: Project[];
 }
 
-export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing = false }: TaskFormProps) {
+export function TaskForm({ onSubmit, onCancel, initialData, isEditing = false, projects }: TaskFormProps) {
   const [formData, setFormData] = useState({
-    projectId: initialData?.projectId || '',
     taskName: initialData?.taskName || '',
+    projectId: initialData?.projectId || '',
     taskDescription: initialData?.taskDescription || '',
-    assignedTo: initialData?.assignedTo || '',
     priority: initialData?.priority || 'Medium' as Task['priority'],
     status: initialData?.status || 'To Do' as Task['status'],
     estimatedHours: initialData?.estimatedHours || 0,
-    billedHours: initialData?.billedHours || 0,
+    dueDate: initialData?.dueDate || '',
+    assignedTo: initialData?.assignedTo || '',
+    artifacts: initialData?.artifacts || '',
     projectPerHourRate: initialData?.projectPerHourRate || 0,
     taskPerHourRate: initialData?.taskPerHourRate || 0,
-    dueDate: initialData?.dueDate || '',
-    artifacts: initialData?.artifacts || '',
+    calculatedAmount: initialData?.calculatedAmount || 0,
   });
 
-  useEffect(() => {
-    if (formData.projectId) {
-      const selectedProject = projects.find(p => p.id === formData.projectId);
-      if (selectedProject) {
-        setFormData(prev => ({
-          ...prev,
-          projectPerHourRate: selectedProject.perHourRate,
-          taskPerHourRate: prev.taskPerHourRate || selectedProject.perHourRate,
-        }));
-      }
-    }
-  }, [formData.projectId, projects]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSubmit(formData);
   };
 
   const handleInputChange = (field: string, value: string | number) => {
@@ -58,6 +46,8 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
     }));
   };
 
+  const selectedProject = projects.find(p => p.id === formData.projectId);
+
   return (
     <Card>
       <CardHeader>
@@ -65,22 +55,6 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="projectId">Project</Label>
-            <Select value={formData.projectId} onValueChange={(value) => handleInputChange('projectId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.projectName} - {project.clientName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="taskName">Task Name</Label>
@@ -92,12 +66,19 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
               />
             </div>
             <div>
-              <Label htmlFor="assignedTo">Assigned To</Label>
-              <Input
-                id="assignedTo"
-                value={formData.assignedTo}
-                onChange={(e) => handleInputChange('assignedTo', e.target.value)}
-              />
+              <Label htmlFor="projectId">Project</Label>
+              <Select value={formData.projectId} onValueChange={(value) => handleInputChange('projectId', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.projectName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -111,7 +92,7 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="priority">Priority</Label>
               <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
@@ -119,9 +100,10 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -139,18 +121,9 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) => handleInputChange('dueDate', e.target.value)}
-              />
-            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="estimatedHours">Estimated Hours</Label>
               <Input
@@ -163,47 +136,59 @@ export function TaskForm({ onSubmit, onCancel, projects, initialData, isEditing 
               />
             </div>
             <div>
-              <Label htmlFor="billedHours">Billed Hours</Label>
+              <Label htmlFor="dueDate">Due Date</Label>
               <Input
-                id="billedHours"
-                type="number"
-                value={formData.billedHours}
-                onChange={(e) => handleInputChange('billedHours', parseFloat(e.target.value) || 0)}
-                min="0"
-                step="0.5"
-              />
-            </div>
-            <div>
-              <Label htmlFor="taskPerHourRate">Task Rate (₹)</Label>
-              <Input
-                id="taskPerHourRate"
-                type="number"
-                value={formData.taskPerHourRate}
-                onChange={(e) => handleInputChange('taskPerHourRate', parseFloat(e.target.value) || 0)}
-                min="0"
-                step="0.01"
+                id="dueDate"
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => handleInputChange('dueDate', e.target.value)}
               />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="artifacts">Artifacts/Deliverables</Label>
-            <Textarea
-              id="artifacts"
-              value={formData.artifacts}
-              onChange={(e) => handleInputChange('artifacts', e.target.value)}
-              rows={2}
-              placeholder="Describe deliverables, outputs, or artifacts..."
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="assignedTo">Assigned To</Label>
+              <Input
+                id="assignedTo"
+                value={formData.assignedTo}
+                onChange={(e) => handleInputChange('assignedTo', e.target.value)}
+                placeholder="Enter assignee name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="artifacts">Artifacts/Deliverables</Label>
+              <Input
+                id="artifacts"
+                value={formData.artifacts}
+                onChange={(e) => handleInputChange('artifacts', e.target.value)}
+                placeholder="Describe deliverables, outputs, or artifacts"
+              />
+            </div>
           </div>
+
+          {selectedProject && (
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Project:</strong> {selectedProject.projectName}
+                {selectedProject.clientName && (
+                  <span className="ml-2">• <strong>Client:</strong> {selectedProject.clientName}</span>
+                )}
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
             <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">
+            <LoadingButton 
+              type="submit" 
+              className="w-full sm:w-auto"
+              loadingText={isEditing ? "Updating..." : "Creating..."}
+            >
               {isEditing ? 'Update Task' : 'Create Task'}
-            </Button>
+            </LoadingButton>
           </div>
         </form>
       </CardContent>

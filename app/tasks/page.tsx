@@ -122,70 +122,65 @@ export default function TasksPage() {
     }
   };
 
-  const handleCreateTask = async (taskData: Omit<Task, 'id' | 'actualHours' | 'calculatedAmount'>) => {
-    try {
-      if (editingTask) {
-        console.log('Updating task with data:', taskData);
-        const response = await fetch(`/api/tasks/${editingTask.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(taskData),
-        });
+    const handleCreateTask = async (taskData: Omit<Task, 'id' | 'actualHours' | 'billedHours'>) => {
+    if (editingTask) {
+      console.log('Updating task with data:', taskData);
+      const response = await fetch(`/api/tasks/${editingTask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Task update failed:', errorText);
-          
-          let errorMessage = 'Failed to update task';
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorText;
-          } catch {
-            errorMessage = errorText || 'Failed to update task';
-          }
-          
-          throw new Error(errorMessage);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Task update failed:', errorText);
+
+        let errorMessage = 'Failed to update task';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || 'Failed to update task';
         }
 
-        const updatedTask = await response.json();
-        setTasks(prev => prev.map(t => t.id === editingTask.id ? updatedTask : t));
-      } else {
-        console.log('Creating task with data:', taskData);
-        const response = await fetch('/api/tasks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(taskData),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Task creation failed:', errorText);
-          
-          let errorMessage = 'Failed to create task';
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorText;
-          } catch {
-            errorMessage = errorText || 'Failed to create task';
-          }
-          
-          throw new Error(errorMessage);
-        }
-
-        const newTask = await response.json();
-        setTasks(prev => [...prev, newTask]);
+        throw new Error(errorMessage);
       }
-      
-      setShowForm(false);
-      setEditingTask(null);
-    } catch (err) {
-      console.error('Error saving task:', err);
-      setError(editingTask ? 'Failed to update task. Please try again.' : 'Failed to create task. Please try again.');
+
+      const updatedTask = await response.json();
+      setTasks(prev => prev.map(t => t.id === editingTask.id ? updatedTask : t));
+    } else {
+      console.log('Creating task with data:', taskData);
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Task creation failed:', errorText);
+
+        let errorMessage = 'Failed to create task';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || 'Failed to create task';
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const newTask = await response.json();
+      setTasks(prev => [...prev, newTask]);
     }
+
+    setShowForm(false);
+    setEditingTask(null);
   };
 
   const getProjectName = (projectId: string) => {

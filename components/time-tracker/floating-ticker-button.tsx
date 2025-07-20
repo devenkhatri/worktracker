@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ export function FloatingTickerButton() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedData = useRef(false);
 
   // Don't show on login page or if not authenticated
   if (pathname === '/login' || !isAuthenticated) {
@@ -25,10 +26,10 @@ export function FloatingTickerButton() {
 
   // Fetch projects and tasks when modal opens
   useEffect(() => {
-    if (isModalOpen && projects.length === 0) {
+    if (isModalOpen && !hasFetchedData.current) {
       fetchData();
     }
-  }, [isModalOpen, projects.length]);
+  }, [isModalOpen]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -49,6 +50,7 @@ export function FloatingTickerButton() {
 
       setProjects(projectsData);
       setTasks(tasksData);
+      hasFetchedData.current = true;
     } catch (err) {
       console.error('Error fetching data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -67,6 +69,7 @@ export function FloatingTickerButton() {
 
   const handleTimeEntryCreated = () => {
     // Refresh the data after a time entry is created
+    hasFetchedData.current = false;
     fetchData();
   };
 

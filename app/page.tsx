@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardStatsComponent } from '@/components/dashboard-stats';
 import { ConfigVerification } from '@/components/config-verification';
 import { RecentActivities } from '@/components/recent-activities';
+import { QuickActions } from '@/components/quick-actions';
 import { DashboardStats } from '@/lib/types';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,7 +14,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [configValid, setConfigValid] = useState<boolean | null>(true); // Start with true to attempt loading
+  const [configValid, setConfigValid] = useState<boolean | null>(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -168,6 +169,7 @@ export default function DashboardPage() {
       </div>
     );
   }
+
   return (
     <div className="space-y-6">
       <div>
@@ -181,37 +183,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentActivities limit={5} />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <button 
-                onClick={() => window.location.href = '/projects'}
-                className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
-              >
-                <div className="font-medium">Create New Project</div>
-                <div className="text-sm text-muted-foreground">Start tracking a new project</div>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/tasks'}
-                className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
-              >
-                <div className="font-medium">Add Task</div>
-                <div className="text-sm text-muted-foreground">Create a new task for existing projects</div>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/time-tracking'}
-                className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
-              >
-                <div className="font-medium">Log Time</div>
-                <div className="text-sm text-muted-foreground">Track time spent on tasks</div>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+        <QuickActions />
       </div>
     </div>
   );
